@@ -88,8 +88,8 @@ export function calcDifficultyAdjustment(
   network: string,
   latestBlockTimestamp: number,
 ): DifficultyAdjustment {
-  const EPOCH_BLOCK_LENGTH = 2016; // Bitcoin mainnet
-  const BLOCK_SECONDS_TARGET = 600; // Bitcoin mainnet
+  const EPOCH_BLOCK_LENGTH = 1; // Doge mainnet
+  const BLOCK_SECONDS_TARGET = 60; // Doge mainnet
   const TESTNET_MAX_BLOCK_SECONDS = 1200; // Bitcoin testnet
 
   const diffSeconds = Math.max(0, nowSeconds - DATime);

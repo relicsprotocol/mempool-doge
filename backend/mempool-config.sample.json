@@ -1,7 +1,7 @@
 {
   "MEMPOOL": {
     "OFFICIAL": false,
-    "NETWORK": "mainnet",
+    "NETWORK": "doge",
     "BACKEND": "electrum",
     "ENABLED": true,
     "HTTP_PORT": 8999,

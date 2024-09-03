@@ -322,7 +322,7 @@ class Blocks {
       extras.totalInputAmt = null;
     }
 
-    if (['mainnet', 'testnet', 'signet'].includes(config.MEMPOOL.NETWORK)) {
+    if (['mainnet', 'testnet', 'signet', 'doge'].includes(config.MEMPOOL.NETWORK)) {
       let pool: PoolTag;
       if (coinbaseTx !== undefined) {
         pool = await this.$findBlockMiner(coinbaseTx);
@@ -1128,7 +1128,7 @@ class Blocks {
     }
 
     // Not Bitcoin network, return the block as it from the bitcoin backend
-    if (['mainnet', 'testnet', 'signet'].includes(config.MEMPOOL.NETWORK) === false) {
+    if (['mainnet', 'testnet', 'signet', 'doge'].includes(config.MEMPOOL.NETWORK) === false) {
       return await bitcoinCoreApi.$getBlock(hash);
     }
 

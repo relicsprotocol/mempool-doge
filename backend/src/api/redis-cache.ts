@@ -13,6 +13,7 @@ enum NetworkDB {
   signet,
   liquid,
   liquidtestnet,
+  doge,
 }
 
 class RedisCache {

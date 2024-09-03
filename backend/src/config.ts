@@ -6,7 +6,7 @@ interface IConfig {
   MEMPOOL: {
     ENABLED: boolean;
     OFFICIAL: boolean;
-    NETWORK: 'mainnet' | 'testnet' | 'signet' | 'liquid' | 'liquidtestnet';
+    NETWORK: 'mainnet' | 'testnet' | 'signet' | 'liquid' | 'liquidtestnet' | 'doge';
     BACKEND: 'esplora' | 'electrum' | 'none';
     HTTP_PORT: number;
     UNIX_SOCKET_PATH: string;
@@ -166,7 +166,7 @@ const defaults: IConfig = {
   'MEMPOOL': {
     'ENABLED': true,
     'OFFICIAL': false,
-    'NETWORK': 'mainnet',
+    'NETWORK': 'doge',
     'BACKEND': 'none',
     'HTTP_PORT': 8999,
     'UNIX_SOCKET_PATH': '',
