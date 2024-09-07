@@ -33,7 +33,7 @@ interface DiffShape {
   expected: boolean;
 }
 
-const EPOCH_BLOCK_LENGTH = 2016; // Bitcoin mainnet
+const EPOCH_BLOCK_LENGTH = 1; // Doge mainnet
 
 @Component({
   selector: 'app-difficulty',
@@ -47,7 +47,7 @@ export class DifficultyComponent implements OnInit {
   @Input() showTitle = true;
 
   @ViewChild('epochSvg') epochSvgElement: ElementRef<SVGElement>;
- 
+
   isLoadingWebSocket$: Observable<boolean>;
   difficultyEpoch$: Observable<EpochProgress>;
 

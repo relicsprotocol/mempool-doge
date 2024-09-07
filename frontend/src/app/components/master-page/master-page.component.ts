@@ -32,7 +32,7 @@ export class MasterPageComponent implements OnInit, OnDestroy {
   servicesEnabled = false;
   menuOpen = false;
   isDropdownVisible: boolean;
-  
+
   enterpriseInfo: any;
   enterpriseInfo$: Subscription;
 
@@ -69,7 +69,7 @@ export class MasterPageComponent implements OnInit, OnDestroy {
     this.enterpriseInfo$ = this.enterpriseService.info$.subscribe(info => {
       this.enterpriseInfo = info;
     });
-    
+
     this.servicesEnabled = this.officialMempoolSpace && this.stateService.env.ACCELERATOR === true && this.stateService.network === '';
     this.refreshAuth();
 
@@ -86,6 +86,7 @@ export class MasterPageComponent implements OnInit, OnDestroy {
       this.env.LIQUID_ENABLED,
       this.env.LIQUID_TESTNET_ENABLED,
       this.env.MAINNET_ENABLED,
+      this.env.DOGE_ENABLED,
     ];
     const enabledNetworksCount = networks.filter((networkEnabled) => networkEnabled).length;
     this.isDropdownVisible = enabledNetworksCount > 1;

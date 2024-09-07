@@ -267,6 +267,11 @@ const featureActivation = {
     segwit: 477120,
     taproot: 709632,
   },
+  doge: {
+    rbf: 0,
+    segwit: 1465749,
+    taproot: 1000000000, // not activated
+  },
   testnet: {
     rbf: 720255,
     segwit: 872730,
@@ -285,7 +290,7 @@ const featureActivation = {
 };
 
 export function isFeatureActive(network: string, height: number, feature: 'rbf' | 'segwit' | 'taproot'): boolean {
-  const activationHeight = featureActivation[network || 'mainnet']?.[feature];
+  const activationHeight = featureActivation[network || 'doge']?.[feature];
   if (activationHeight != null) {
     return height >= activationHeight;
   } else {

@@ -48,6 +48,21 @@ const ADDRESS_CHARS: {
         + `{6,100}`
       + `)`,
   },
+  doge: {
+    base58: `[D9]` // Starts with a single D or 9 (P2PKH is D, P2SH is 9)
+      + BASE58_CHARS
+      + `{26,34}`, // D is 34 length, 9 is 34 length
+    // segwit is not enabled on doge... so this code is irrelevant
+    bech32: `(?:`
+        + `doge1` // Starts with doge1
+        + BECH32_CHARS_LW
+        + `{6,100}` // As per bech32, 6 char checksum is minimum
+      + `|`
+        + `DOGE1` // All upper case version
+        + BECH32_CHARS_UP
+        + `{6,100}`
+      + `)`,
+  },
   testnet: {
     base58: `[mn2]` // Starts with a single m, n, or 2 (P2PKH is m or n, 2 is P2SH)
       + BASE58_CHARS
@@ -97,7 +112,7 @@ const ADDRESS_CHARS: {
       + `|`
         + `[V][TJ]` // Confidential P2PKH or P2SH starts with VT or VJ
         + BASE58_CHARS
-        + `{78}`, 
+        + `{78}`,
     bech32: `(?:`
         + `(?:` // bech32 liquid starts with ex1 (unconfidential) or lq1 (confidential)
           + `ex1`
@@ -142,7 +157,7 @@ const ADDRESS_CHARS: {
 type RegexTypeNoAddrNoBlockHash = | `transaction` | `blockheight` | `date` | `timestamp`;
 export type RegexType = `address` | `blockhash` | RegexTypeNoAddrNoBlockHash;
 
-export const NETWORKS = [`testnet`, `testnet4`, `signet`, `liquid`, `liquidtestnet`, `mainnet`] as const;
+export const NETWORKS = [`testnet`, `testnet4`, `signet`, `liquid`, `liquidtestnet`, `mainnet`, `doge`] as const;
 export type Network = typeof NETWORKS[number]; // Turn const array into union type
 
 export const ADDRESS_REGEXES: [RegExp, Network][] = NETWORKS
@@ -166,6 +181,8 @@ function isNetworkAvailable(network: Network, env: Env): boolean {
       return env.LIQUID_ENABLED === true;
     case 'liquidtestnet':
       return env.LIQUID_TESTNET_ENABLED === true;
+    case 'doge':
+      return env.DOGE_ENABLED === true;
     case 'mainnet':
       return true; // There is no "MAINNET_ENABLED" flag
     default:
@@ -270,6 +287,11 @@ export function getRegex(type: RegexType, network?: Network): RegExp {
           regex += `04${HEX_CHARS}{128}`; // Uncompressed pubkey
           regex += `|`; // OR
           regex += `(?:02|03)${HEX_CHARS}{64}`; // Compressed pubkey
+          break;
+        case `doge`:
+          regex += ADDRESS_CHARS.doge.base58;
+          regex += `|`; // OR
+          regex += ADDRESS_CHARS.doge.bech32;
           break;
         case `testnet`:
           regex += ADDRESS_CHARS.testnet.base58;

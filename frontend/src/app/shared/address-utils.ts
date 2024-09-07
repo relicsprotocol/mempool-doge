@@ -28,6 +28,13 @@ const ADDRESS_PREFIXES = {
     },
     bech32: 'bc1',
   },
+  doge: {
+    base58: {
+      pubkey: ['D', '9'],
+      script: 'A',
+    },
+    bech32: 'doge1', // not enabled
+  },
   testnet: {
     base58: {
       pubkey: ['m', 'n'],

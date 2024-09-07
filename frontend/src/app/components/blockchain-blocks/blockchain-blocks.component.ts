@@ -29,7 +29,7 @@ export class BlockchainBlocksComponent implements OnInit, OnChanges, OnDestroy {
   @Input() spotlight: number = 0;
   @Input() showPools: boolean = true;
   @Input() getHref?: (index, block) => string = (index, block) => `/block/${block.id}`;
-  
+
   specialBlocks = specialBlocks;
   network = '';
   blocks: BlockchainBlock[] = [];
@@ -67,6 +67,7 @@ export class BlockchainBlocksComponent implements OnInit, OnChanges, OnDestroy {
 
   gradientColors = {
     '': ['var(--mainnet-alt)', 'var(--primary)'],
+    doge: ['var(--doge)', 'var(--doge-alt)'],
     liquid: ['var(--liquid)', 'var(--testnet-alt)'],
     'liquidtestnet': ['var(--liquidtestnet)', 'var(--liquidtestnet-alt)'],
     testnet: ['var(--testnet)', 'var(--testnet-alt)'],
@@ -331,7 +332,7 @@ export class BlockchainBlocksComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   isSpecial(height: number): boolean {
-    return this.specialBlocks[height]?.networks.includes(this.stateService.network || 'mainnet') ? true : false;
+    return this.specialBlocks[height]?.networks.includes(this.stateService.network || 'doge') ? true : false;
   }
 
   getStyleForBlock(block: BlockchainBlock, index: number, animateEnterFrom: number = 0) {

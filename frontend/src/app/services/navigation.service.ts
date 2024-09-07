@@ -14,6 +14,7 @@ export class NavigationService {
     bitcoin: {
       subnets: [
         { name: 'mainnet', path: '' },
+        { name: 'doge', path: '' },
         { name: 'testnet', path: this.stateService.env.ROOT_NETWORK === 'testnet' ? '/' : '/testnet' },
         { name: 'testnet4', path: this.stateService.env.ROOT_NETWORK === 'testnet4' ? '/' : '/testnet4' },
         { name: 'signet', path: this.stateService.env.ROOT_NETWORK === 'signet' ? '/' : '/signet' },

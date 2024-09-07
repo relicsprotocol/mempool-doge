@@ -134,7 +134,7 @@ export class StartComponent implements OnInit, AfterViewChecked, OnDestroy {
         }
 
         for (const sb in specialBlocks) {
-          if (specialBlocks[sb].networks.includes(this.stateService.network || 'mainnet')) {
+          if (specialBlocks[sb].networks.includes(this.stateService.network || 'doge')) {
             const height = parseInt(sb, 10);
             const diff = height - block.height;
             if (diff > 0 && diff <= 1008) {
@@ -144,11 +144,11 @@ export class StartComponent implements OnInit, AfterViewChecked, OnDestroy {
           }
         }
         for (const block of blocks) {
-          if (specialBlocks[block.height] && specialBlocks[block.height].networks.includes(this.stateService.network || 'mainnet')) {
+          if (specialBlocks[block.height] && specialBlocks[block.height].networks.includes(this.stateService.network || 'doge')) {
             this.specialEvent = true;
             this.eventName = specialBlocks[block.height].labelEventCompleted;
           }
-          if (specialBlocks[block.height - 8] && specialBlocks[block.height - 8].networks.includes(this.stateService.network || 'mainnet')) {
+          if (specialBlocks[block.height - 8] && specialBlocks[block.height - 8].networks.includes(this.stateService.network || 'doge')) {
             this.specialEvent = false;
             this.eventName = '';
           }
@@ -158,7 +158,7 @@ export class StartComponent implements OnInit, AfterViewChecked, OnDestroy {
       if (reset) {
         this.resetScroll();
         this.stateService.resetScroll$.next(false);
-      } 
+      }
     });
 
   }

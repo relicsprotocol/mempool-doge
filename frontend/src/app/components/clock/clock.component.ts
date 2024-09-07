@@ -33,6 +33,7 @@ export class ClockComponent implements OnInit {
 
   gradientColors = {
     '': ['var(--mainnet-alt)', 'var(--primary)'],
+    doge: ['var(--doge)', 'var(--doge-alt)'],
     liquid: ['var(--liquid)', 'var(--testnet-alt)'],
     'liquidtestnet': ['var(--liquidtestnet)', 'var(--liquidtestnet-alt)'],
     testnet: ['var(--testnet)', 'var(--testnet-alt)'],
@@ -107,7 +108,7 @@ export class ClockComponent implements OnInit {
       )`,
     };
   }
-  
+
   @HostListener('window:resize', ['$event'])
   resizeCanvas(): void {
     const windowWidth = this.limitWidth || window.innerWidth || 800;

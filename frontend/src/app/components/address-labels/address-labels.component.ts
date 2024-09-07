@@ -55,7 +55,7 @@ export class AddressLabelsComponent implements OnChanges {
   }
 
   handleVin() {
-    const address = new AddressTypeInfo(this.network || 'mainnet', this.vin.prevout?.scriptpubkey_address, this.vin.prevout?.scriptpubkey_type as AddressType, [this.vin]);
+    const address = new AddressTypeInfo(this.network || 'doge', this.vin.prevout?.scriptpubkey_address, this.vin.prevout?.scriptpubkey_type as AddressType, [this.vin]);
     if (address?.scripts.size) {
       const script = address?.scripts.values().next().value;
       if (script.template?.label) {
@@ -65,7 +65,7 @@ export class AddressLabelsComponent implements OnChanges {
   }
 
   handleVout() {
-    const address = new AddressTypeInfo(this.network || 'mainnet', this.vout.scriptpubkey_address, this.vout.scriptpubkey_type as AddressType, undefined, this.vout);
+    const address = new AddressTypeInfo(this.network || 'doge', this.vout.scriptpubkey_address, this.vout.scriptpubkey_type as AddressType, undefined, this.vout);
     if (address?.scripts.size) {
       const script = address?.scripts.values().next().value;
       if (script.template?.label) {

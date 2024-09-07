@@ -32,7 +32,10 @@
                 <ng-template #transactionsPlural let-i i18n="shared.transaction-count.plural">{{ i }} transactions</ng-template>
               </div>
               <div [attr.data-cy]="'mempool-block-' + i + '-time'" class="time-difference" *ngIf="projectedBlock.blockVSize <= stateService.blockVSize; else mergedBlock">
-                <ng-template [ngIf]="network === 'liquid' || network === 'liquidtestnet'" [ngIfElse]="timeDiffMainnet">
+                <ng-template
+                  [ngIf]="network === 'liquid' || network === 'liquidtestnet' || network === 'doge'"
+                  [ngIfElse]="timeDiffMainnet"
+                >
                   <app-time kind="until" [time]="(1 * i) + now + 61000" [fastRender]="false" [fixedRender]="true" [precision]="1" minUnit="minute"></app-time>
                 </ng-template>
                 <ng-template #timeDiffMainnet>

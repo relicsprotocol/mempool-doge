@@ -38,8 +38,8 @@ export class SearchFormComponent implements OnInit {
     }
   }
 
-  regexAddress = getRegex('address', 'mainnet'); // Default to mainnet
-  regexBlockhash = getRegex('blockhash', 'mainnet');
+  regexAddress = getRegex('address', 'doge'); // Default to Doge
+  regexBlockhash = getRegex('blockhash', 'doge');
   regexTransaction = getRegex('transaction');
   regexBlockheight = getRegex('blockheight');
   regexDate = getRegex('date');
@@ -73,8 +73,8 @@ export class SearchFormComponent implements OnInit {
     this.stateService.networkChanged$.subscribe((network) => {
       this.network = network;
       // TODO: Eventually change network type here from string to enum of consts
-      this.regexAddress = getRegex('address', network as any || 'mainnet');
-      this.regexBlockhash = getRegex('blockhash', network as any || 'mainnet');
+      this.regexAddress = getRegex('address', network as any || 'doge');
+      this.regexBlockhash = getRegex('blockhash', network as any || 'doge');
     });
 
     this.router.events.subscribe((e: NavigationStart) => { // Reset search focus when changing page
@@ -196,10 +196,10 @@ export class SearchFormComponent implements OnInit {
           const matchesBlockHash = this.regexBlockhash.test(searchText);
           const matchesAddress = !matchesTxId && this.regexAddress.test(searchText);
           const publicKey = matchesAddress && searchText.startsWith('0');
-          const otherNetworks = findOtherNetworks(searchText, this.network as any || 'mainnet', this.env);
+          const otherNetworks = findOtherNetworks(searchText, this.network as any || 'doge', this.env);
           const liquidAsset = this.assets ? (this.assets[searchText] || []) : [];
           const pools = this.pools.filter(pool => pool["name"].toLowerCase().includes(searchText.toLowerCase())).slice(0, 10);
-          
+
           if (matchesDateTime && searchText.indexOf('/') !== -1) {
             searchText = searchText.replace(/\//g, '-');
           }

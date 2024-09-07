@@ -44,6 +44,7 @@ export interface Customization {
 
 export interface Env {
   MAINNET_ENABLED: boolean;
+  DOGE_ENABLED: boolean;
   TESTNET_ENABLED: boolean;
   TESTNET4_ENABLED: boolean;
   SIGNET_ENABLED: boolean;
@@ -81,7 +82,8 @@ export interface Env {
 }
 
 const defaultEnv: Env = {
-  'MAINNET_ENABLED': true,
+  'MAINNET_ENABLED': false,
+  'DOGE_ENABLED': true,
   'TESTNET_ENABLED': false,
   'TESTNET4_ENABLED': false,
   'SIGNET_ENABLED': false,
@@ -317,7 +319,7 @@ export class StateService {
     this.hideAudit.subscribe((hide) => {
       this.storageService.setValue('audit-preference', hide ? 'hide' : 'show');
     });
-    
+
     const fiatPreference = this.storageService.getValue('fiat-preference');
     this.fiatCurrency$ = new BehaviorSubject<string>(fiatPreference || 'USD');
 
@@ -460,6 +462,6 @@ export class StateService {
   focusSearchInputDesktop() {
     if (!hasTouchScreen()) {
       this.searchFocus$.next(true);
-    }    
+    }
   }
 }
