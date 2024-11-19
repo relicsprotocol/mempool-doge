@@ -33,7 +33,7 @@ export default class TxView implements TransactionStripped {
   flags: number;
   bigintFlags?: bigint | null = 0b00000100_00000000_00000000_00000000n;
   time?: number;
-  status?: 'found' | 'missing' | 'sigop' | 'fresh' | 'freshcpfp' | 'added' | 'added_prioritized' | 'prioritized' | 'added_deprioritized' | 'deprioritized' | 'censored' | 'selected' | 'rbf' | 'accelerated';
+  status?: 'found' | 'missing' | 'sigop' | 'fresh' | 'freshcpfp' | 'added' | 'added_prioritized' | 'prioritized' | 'added_deprioritized' | 'deprioritized' | 'censored' | 'selected' | 'rbf';
   context?: 'projected' | 'actual';
   scene?: BlockScene;
 
@@ -63,7 +63,7 @@ export default class TxView implements TransactionStripped {
     this.rate = tx.rate;
     this.status = tx.status;
     this.flags = tx.flags || 0;
-    this.bigintFlags = tx.flags ? (BigInt(tx.flags) | (this.acc ? TransactionFlags.acceleration : 0n)): 0n;
+    this.bigintFlags = tx.flags ? (BigInt(tx.flags) | (0n)): 0n;
     this.initialised = false;
     this.vertexArray = scene.vertexArray;
 

@@ -473,7 +473,7 @@ export function getTransactionFlags(tx: Transaction, cpfpInfo?: CpfpInfo, replac
   if (hasFakePubkey) {
     flags |= TransactionFlags.fake_pubkey;
   }
-  
+
   // fast but bad heuristic to detect possible coinjoins
   // (at least 5 inputs and 5 outputs, less than half of which are unique amounts, with no address reuse)
   const addressReuse = Object.keys(reusedOutputAddresses).reduce((acc, key) => Math.max(acc, (reusedInputAddresses[key] || 0) + (reusedOutputAddresses[key] || 0)), 0) > 1;
@@ -496,18 +496,8 @@ export function getTransactionFlags(tx: Transaction, cpfpInfo?: CpfpInfo, replac
   return flags;
 }
 
-export function getUnacceleratedFeeRate(tx: Transaction, accelerated: boolean): number {
-  if (accelerated) {
-    let ancestorVsize = tx.weight / 4;
-    let ancestorFee = tx.fee;
-    for (const ancestor of tx.ancestors || []) {
-      ancestorVsize += (ancestor.weight / 4);
-      ancestorFee += ancestor.fee;
-    }
-    return Math.min(tx.fee / (tx.weight / 4), (ancestorFee / ancestorVsize));
-  } else {
-    return tx.effectiveFeePerVsize;
-  }
+export function getFeeRate(tx: Transaction): number {
+  return tx.effectiveFeePerVsize;
 }
 
 export function identifyPrioritizedTransactions(transactions: TransactionStripped[]): { prioritized: string[], deprioritized: string[] } {

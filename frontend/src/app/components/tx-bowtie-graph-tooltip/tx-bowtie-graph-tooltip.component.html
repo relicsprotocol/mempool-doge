@@ -29,7 +29,7 @@
   <ng-template #pegout>
     <ng-container *ngIf="line.pegout; else normal">
       <p *ngIf="!isConnector">Peg Out</p>
-      <p *ngIf="line.displayValue != null"><app-amount [satoshis]="line.displayValue"></app-amount></p>
+      <p *ngIf="line.displayValue != null"><app-amount [shibes]="line.displayValue"></app-amount></p>
       <p class="address">
         <app-truncate [text]="line.pegout"></app-truncate>
       </p>
@@ -45,7 +45,7 @@
         </ng-container>
         <span *ngIf="line.type !== 'fee'"> #{{ line.index }}</span>
         <ng-container [ngSwitch]="line.type">
-          <span *ngSwitchCase="'input'"> 
+          <span *ngSwitchCase="'input'">
             <ng-container *ngIf="line.status?.block_height">
                 <ng-container *ngIf="line.blockHeight; else noBlockHeight">
                   <ng-container *ngTemplateOutlet="nBlocksEarlier; context:{n: line.blockHeight - line?.status?.block_height, connector: false}"></ng-container>
@@ -97,17 +97,7 @@
       </ng-container>
       <p *ngIf="line.displayValue == null && line.confidential" i18n="shared.confidential">Confidential</p>
       <p *ngIf="line.displayValue != null">
-        <ng-template [ngIf]="line.asset && line.asset !== nativeAssetId" [ngIfElse]="defaultOutput">
-          <div *ngIf="assetsMinimal && assetsMinimal[line.asset] else assetNotFound">
-            <ng-container *ngTemplateOutlet="assetBox; context:{ $implicit: line }"></ng-container>
-          </div>
-          <ng-template #assetNotFound>
-            {{ line.displayValue }} <span class="symbol">{{ line.asset | slice : 0 : 7 }}</span>
-          </ng-template>
-        </ng-template>
-        <ng-template #defaultOutput>
-          <app-amount [blockConversion]="isConnector ? blockConversions[line?.status?.block_time] : blockConversions[line?.timestamp]" [satoshis]="line.displayValue" [forceBlockConversion]="isConnector && line?.status?.block_time"></app-amount>
-        </ng-template>
+        <app-amount [blockConversion]="isConnector ? blockConversions[line?.status?.block_time] : blockConversions[line?.timestamp]" [shibes]="line.displayValue" [forceBlockConversion]="isConnector && line?.status?.block_time"></app-amount>
       </p>
       <p *ngIf="line.type !== 'fee' && line.address" class="address">
         <app-truncate [text]="line.address"></app-truncate>

@@ -62,7 +62,7 @@ export class AddressGroupComponent implements OnInit, OnDestroy {
           this.addresses = {};
           this.addressInfo = {};
           this.balance = 0;
-          
+
           this.addressStrings = params.get('addresses').split(',').map(address => {
             if (/^[A-Z]{2,5}1[AC-HJ-NP-Z02-9]{8,100}|04[a-fA-F0-9]{128}|(02|03)[a-fA-F0-9]{64}$/.test(address)) {
               return address.toLowerCase();
@@ -72,7 +72,7 @@ export class AddressGroupComponent implements OnInit, OnDestroy {
           });
 
           return forkJoin(this.addressStrings.map(address => {
-            const getLiquidInfo = ((this.stateService.network === 'liquid' || this.stateService.network === 'liquidtestnet') && /^([a-zA-HJ-NP-Z1-9]{26,35}|[a-z]{2,5}1[ac-hj-np-z02-9]{8,100}|[a-km-zA-HJ-NP-Z1-9]{80})$/.test(address));
+            const getLiquidInfo = false;
             return forkJoin([
               of(address),
               this.electrsApiService.getAddress$(address),

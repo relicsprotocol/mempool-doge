@@ -18,12 +18,12 @@ if (parentPort) {
         mempool.delete(uid);
       });
     }
-    
-    const { blocks, rates, clusters } = makeBlockTemplates(mempool);
+
+    const { blocks, rates } = makeBlockTemplates(mempool);
 
     // return the result to main thread.
     if (parentPort) {
-      parentPort.postMessage({ blocks, rates, clusters });
+      parentPort.postMessage({ blocks, rates });
     }
   });
 }
@@ -33,12 +33,11 @@ if (parentPort) {
 * (see BlockAssembler in https://github.com/bitcoin/bitcoin/blob/master/src/node/miner.cpp)
 */
 function makeBlockTemplates(mempool: Map<number, CompactThreadTransaction>)
-  : { blocks: number[][], rates: Map<number, number>, clusters: Map<number, number[]> } {
+  : { blocks: number[][], rates: Map<number, number> } {
   const start = Date.now();
   const auditPool: Map<number, AuditTransaction> = new Map();
   const mempoolArray: AuditTransaction[] = [];
-  const cpfpClusters: Map<number, number[]> = new Map();
-  
+
   mempool.forEach(tx => {
     tx.dirty = false;
     // initializing everything up front helps V8 optimize property access later
@@ -125,11 +124,6 @@ function makeBlockTemplates(mempool: Map<number, CompactThreadTransaction>)
         const ancestors: AuditTransaction[] = Array.from(nextTx.ancestorMap.values());
         // sort ancestors by dependency graph (equivalent to sorting by ascending ancestor count)
         const sortedTxSet = [...ancestors.sort((a, b) => { return (a.ancestorMap.size || 0) - (b.ancestorMap.size || 0); }), nextTx];
-        let isCluster = false;
-        if (sortedTxSet.length > 1) {
-          cpfpClusters.set(nextTx.uid, sortedTxSet.map(tx => tx.uid));
-          isCluster = true;
-        }
         const effectiveFeeRate = Math.min(nextTx.dependencyRate || Infinity, nextTx.ancestorFee / (nextTx.ancestorWeight / 4));
         const used: AuditTransaction[] = [];
         while (sortedTxSet.length) {
@@ -145,11 +139,6 @@ function makeBlockTemplates(mempool: Map<number, CompactThreadTransaction>)
             mempoolTx.effectiveFeePerVsize = effectiveFeeRate;
             mempoolTx.dirty = true;
           }
-          if (mempoolTx.cpfpRoot !== nextTx.uid) {
-            mempoolTx.cpfpRoot = isCluster ? nextTx.uid : null;
-            mempoolTx.dirty;
-          }
-          mempoolTx.cpfpChecked = true;
           transactions.push(ancestor);
           blockWeight += ancestor.weight;
           used.push(ancestor);
@@ -218,7 +207,7 @@ function makeBlockTemplates(mempool: Map<number, CompactThreadTransaction>)
   const time = end - start;
   logger.debug('Mempool templates calculated in ' + time / 1000 + ' seconds');
 
-  return { blocks, rates, clusters: cpfpClusters };
+  return { blocks, rates };
 }
 
 // traverse in-mempool ancestors

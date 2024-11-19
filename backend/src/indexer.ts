@@ -9,7 +9,6 @@ import PricesRepository from './repositories/PricesRepository';
 import config from './config';
 import auditReplicator from './replication/AuditReplication';
 import statisticsReplicator from './replication/StatisticsReplication';
-import AccelerationRepository from './repositories/AccelerationRepository';
 import BlocksAuditsRepository from './repositories/BlocksAuditsRepository';
 
 export interface CoreIndex {
@@ -37,32 +36,37 @@ class Indexer {
   public async checkAvailableCoreIndexes(): Promise<void> {
     const updatedCoreIndexes: CoreIndex[] = [];
 
-    const indexes: any = await bitcoinClient.getIndexInfo();
-    for (const indexName in indexes) {
-      const newState = {
-        name: indexName,
-        synced: indexes[indexName].synced,
-        best_block_height: indexes[indexName].best_block_height,
-      };
-      logger.info(`Core index '${indexName}' is ${indexes[indexName].synced ? 'synced' : 'not synced'}. Best block height is ${indexes[indexName].best_block_height}`);      
-      updatedCoreIndexes.push(newState);
+    // Fetch blockchain info to get current block height
+    const blockchainInfo: any = await bitcoinClient.getBlockchainInfo();
+    const blockHeight = blockchainInfo.blocks;
+    logger.info(`Current block height is ${blockHeight}`);
 
-      if (indexName === 'coinstatsindex' && newState.synced === true) {
-        const previousState = this.isCoreIndexReady('coinstatsindex');
-        // if (!previousState || previousState.synced === false) {
-          this.runSingleTask('coinStatsIndex');
-        // }
-      }
+    // Try to infer if txindex is enabled by fetching a known transaction
+    let txIndexEnabled = false;
+    try {
+      const txInfo = await bitcoinClient.getRawTransaction('<known-txid>', true);
+      txIndexEnabled = true;
+      logger.info('txindex is enabled');
+    } catch (err) {
+      logger.err('txindex may not be enabled');
     }
+
+    // Update index information
+    const coreIndex = {
+      name: 'txindex',
+      synced: txIndexEnabled,
+      best_block_height: blockHeight,
+    };
+    updatedCoreIndexes.push(coreIndex);
 
     this.coreIndexes = updatedCoreIndexes;
   }
 
   /**
    * Return the best block height if a core index is available, or 0 if not
-   * 
-   * @param name 
-   * @returns 
+   *
+   * @param name
+   * @returns
    */
   public isCoreIndexReady(name: string): CoreIndex | null {
     for (const index of this.coreIndexes) {
@@ -188,14 +192,10 @@ class Indexer {
       await mining.$generateNetworkHashrateHistory();
       await mining.$generatePoolHashrateHistory();
       await blocks.$generateBlocksSummariesDatabase();
-      await blocks.$generateCPFPDatabase();
       await blocks.$generateAuditStats();
       await auditReplicator.$sync();
       await statisticsReplicator.$sync();
-      await AccelerationRepository.$indexPastAccelerations();
       await BlocksAuditsRepository.$migrateAuditsV0toV1();
-      // do not wait for classify blocks to finish
-      blocks.$classifyBlocks();
     } catch (e) {
       this.indexerRunning = false;
       logger.err(`Indexer failed, trying again in 10 seconds. Reason: ` + (e instanceof Error ? e.message : e));

@@ -1,14 +1,10 @@
 /* Theme */
-$bg: #1d1f31;
-$active-bg: #11131f;
-$hover-bg: #12131e;
+$bg: #4a3a36;  // Lighter brown for background
+$active-bg: #3b2d28;  // Slightly lighter active background
+$hover-bg: #4c3c35;
 $fg: #fff;
 $nav-bg: $bg;
-$title-fg: #4a68b9;
-
-$taproot: #eba814;
-$taproot-light: #d5a90a;
-$taproot-dark: #9d7c05;
+$title-fg: #e2b964;  // Brighter gold for titles
 
 /* Bootstrap */
 $body-bg: $bg;
@@ -18,35 +14,35 @@ $gray-700: $fg;
 
 $nav-tabs-link-active-bg: $active-bg;
 
-$primary: #105fb0;
-$secondary: #2d3348;
-$tertiary: #653b9c;
-$success: #1a9436;
-$info: #1bd8f4;
+$primary: #f9c74f;  // Brighter gold for primary buttons
+$secondary: #bfa88f;  // Lighter brownish-gray for secondary elements
+$tertiary: #c47e4b;  // Brighter brownish-orange for tertiary elements
+$success: #33d17a;  // Bright green for success
+$info: #f5b041;  // Warm yellow-gold for info highlights
 
 $h5-font-size: 1.15rem !default;
 
 $pagination-bg: $body-bg;
 $pagination-border-color: $gray-800;
-$pagination-disabled-bg:           $fg;
+$pagination-disabled-bg: $fg;
 $pagination-disabled-border-color: $bg;
-$pagination-active-color:          $fg;
-$pagination-active-bg:             $tertiary;
-$pagination-hover-bg:              $hover-bg;
-$pagination-hover-border-color:     $bg;
-$pagination-disabled-bg:          $bg;
+$pagination-active-color: $fg;
+$pagination-active-bg: $tertiary;
+$pagination-hover-bg: $hover-bg;
+$pagination-hover-border-color: $bg;
+$pagination-disabled-bg: $bg;
 
 $custom-select-indicator-color: $fg;
 
 .input-group-text {
-  background-color: #1c2031 !important;
-  border: 1px solid #20263e !important;
+  background-color: #4e3a33 !important;  // Lighter input background
+  border: 1px solid #5c4b40 !important;  // Slightly lighter border
 }
 
-$link-color:                $info;
-$link-decoration:           none !default;
-$link-hover-color:          darken($link-color, 15%) !default;
-$link-hover-decoration:     underline !default;
+$link-color: $primary;
+$link-decoration: none !default;
+$link-hover-color: darken($link-color, 10%) !default;
+$link-hover-decoration: underline !default;
 
 $dropdown-bg: $bg;
 $dropdown-link-color: $fg;
@@ -75,46 +71,33 @@ $dropdown-link-active-bg: $active-bg;
   --info: #{$info};
   --link-color: #{$link-color};
   --link-hover-color: #{$link-hover-color};
-  --icon: #f1f1f1;
-  --skeleton-bg: #2e324e;
-  --skeleton-bg-light: #5d6182;
+  --icon: #f9f9f9;  // Lighter icon color
+  --skeleton-bg: #3e2e28;  // Slightly lighter for skeleton loading
+  --skeleton-bg-light: #6f5c53;
 
-  --box-bg: #24273e;
-  --stat-box-bg: #181b2d;
-  --alert-bg: #3a1c61;
-  --navbar-bg: #212121;
-  --transparent-fg: #ffffff66;
-  --fade-out-box-bg-start: rgba(36, 39, 62, 0);
-  --fade-out-box-bg-end: rgba(36, 39, 62, 1);
-  --opacity: 0.57;
+  --box-bg: #5c4841;  // Lighter brown for boxes
+  --stat-box-bg: #4a3a35;
+  --alert-bg: #785445;
+  --navbar-bg: #3f3f3f;
+  --transparent-fg: #ffffff99;
+  --fade-out-box-bg-start: rgba(92, 72, 65, 0);
+  --fade-out-box-bg-end: rgba(92, 72, 65, 1);
+  --opacity: 0.67;
 
-  --testnet: #1d486f;
-  --signet: #6f1d5d;
-  --liquid: #116761;
-  --doge: #ecd592;
-  --liquidtestnet: #494a4a;
+  --doge: #f9c74f;  // Brighter Dogecoin gold
+  --doge-alt: #a45d36;  // Darker brown as an alternative color
 
-  --mainnet-alt: #9339f4;
-  --doge-alt: #8c6229;
-  --testnet-alt: #183550;
-  --signet-alt: #471850;
-  --liquidtestnet-alt: #272e46;
+  --green: #33d17a;
+  --red: #f06548;  // Brighter red
+  --yellow: #ffea61;  // Bright yellow
+  --grey: #95a5a6;
+  --tooltip-grey: #c2baba;
+  --orange: #e67e22;
 
-  --taproot: #eba814;
-  --taproot-light: #d5a90a;
-  --taproot-dark: #9d7c05;
-
-  --green: #3bcc49;
-  --red: #dc3545;
-  --yellow: #fff000;
-  --grey: #6c757d;
-  --tooltip-grey: #b1b1b1;
-  --orange: #b86d12;
-
-  --search-button: #4d2d77;
-  --search-button-border: #472a6e;
-  --search-button-focus: #533180;
-  --search-button-shadow: #7c58ab80;
+  --search-button: #f9c74f;
+  --search-button-border: #e8b732;
+  --search-button-focus: #f1b03a;
+  --search-button-shadow: #f9a94080;
 }
 
 html, body {
@@ -167,20 +150,8 @@ main {
   }
 }
 
-.navbar-nav.liquid > .active {
-  background-color: var(--liquid) !important;
-}
-
 .navbar-nav.testnet > .active {
   background-color: var(--testnet) !important;
-}
-
-.navbar-nav.signet > .active {
-  background-color: var(--signet) !important;
-}
-
-.navbar-nav.liquidtestnet > .active {
-  background-color: var(--liquidtestnet) !important;
 }
 
 .form-control {
@@ -760,10 +731,6 @@ h1, h2, h3 {
   background: repeating-linear-gradient(to right, var(--secondary), var(--secondary) 0%, var(--signet) 0%, var(--signet-alt) 100%);
 }
 
-.progress-mempool.liquid {
-  background: repeating-linear-gradient(to right, var(--secondary), var(--secondary) 0%, var(--liquid) 0%, var(--testnet-alt) 100%);
-}
-
 .progress-dark {
   background-color: var(--stat-box-bg);
 }
@@ -952,28 +919,13 @@ th {
     direction: rtl !important;
   }
 
-  .bitcoin-satoshis-text {
+  .dogecoin-shibes-text {
     direction: ltr !important;
   }
 
   .fee-graph {
     @extend .fee-graph;
     margin-left: 5em !important;
-  }
-
-  .acceleration-timeline {
-    @extend .acceleration-timeline;
-    direction: ltr !important;
-
-    .interval {
-      @extend .interval;
-      direction: rtl !important;
-    }
-
-    .time {
-      @extend .time;
-      direction: rtl !important;
-    }
   }
 
   .tracker-bar {
@@ -985,17 +937,6 @@ th {
     @extend .confirmations;
     margin-left: 0 !important;
     margin-right: 1em;
-  }
-
-  .acceleration-tooltip {
-    @extend .acceleration-tooltip;
-    direction: rtl;
-    text-align: right !important;
-
-    .value {
-      @extend .value;
-      text-align: start !important;
-    }
   }
 
   .table th {
@@ -1035,7 +976,7 @@ th {
     text-align: left !important;
   }
 
-  .bitcoin-block {
+  .dogecoin-block {
     direction: rtl;
   }
 
@@ -1310,29 +1251,6 @@ th {
   }
 }
 
-
-
-// Blinking block
-@keyframes shadowyBackground {
-  0% {
-    box-shadow: -10px -15px 75px rgba($taproot, 1);
-  }
-  50% {
-    box-shadow: -10px -15px 75px rgba($taproot, .3);
-  }
-  100% {
-    box-shadow: -10px -15px 75px rgba($taproot, 1);
-  }
-}
-
-.blink-bg {
-  color: #fff;
-  background: repeating-linear-gradient($taproot-dark, $taproot-dark 0.163525%, $taproot-light 100%) !important;
-  animation: shadowyBackground 1s infinite;
-  box-shadow: -10px -15px 75px rgba($taproot, 1);
-  transition: 100ms all ease-in;
-}
-
 .page-item {
   font-family: monospace;
 }
@@ -1345,7 +1263,7 @@ th {
   display: none;
 }
 
-app-master-page, app-liquid-master-page {
+app-master-page {
   display: flex;
   flex-direction: column;
   min-height: 100vh;

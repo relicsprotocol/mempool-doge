@@ -1,5 +1,5 @@
 
-<div class="container-xl dashboard-container" *ngIf="(network$ | async) !== 'liquid'; else liquidDashboard">
+<div class="container-xl dashboard-container" *ngIf="(network$ | async) !== 'liquid';">
   <div class="row row-cols-1 row-cols-md-2" *ngIf="{ value: (mempoolInfoData$ | async) } as mempoolInfoData">
     <ng-container>
       <div class="col card-wrapper">
@@ -132,7 +132,7 @@
           <table class="table latest-transactions">
             <thead>
               <th class="table-cell-txid" i18n="dashboard.latest-transactions.txid">TXID</th>
-              <th class="table-cell-satoshis" i18n="dashboard.latest-transactions.amount">Amount</th>
+              <th class="table-cell-shibes" i18n="dashboard.latest-transactions.amount">Amount</th>
               <th class="table-cell-fiat" *ngIf="(network$ | async) === ''">{{ currency }}</th>
               <th class="table-cell-fees" i18n="transaction.fee|Transaction fee">Fee</th>
             </thead>
@@ -143,7 +143,9 @@
                     <app-truncate [text]="transaction.txid" [lastChars]="5"></app-truncate>
                   </a>
                 </td>
-                <td class="table-cell-satoshis"><app-amount *ngIf="(network$ | async) !== 'liquidtestnet'; else liquidAmount" [satoshis]="transaction.value" digitsInfo="1.2-4" [noFiat]="true"></app-amount><ng-template #liquidAmount i18n="shared.confidential">Confidential</ng-template></td>
+                <td class="table-cell-shibes">
+                  <app-amount [shibes]="transaction.value" digitsInfo="1.2-4" [noFiat]="true"></app-amount>
+                </td>
                 <td class="table-cell-fiat" *ngIf="(network$ | async) === ''" ><app-fiat [value]="transaction.value" digitsInfo="1.0-0"></app-fiat></td>
                 <td class="table-cell-fees"><app-fee-rate [fee]="transaction.fee" [weight]="transaction.vsize * 4"></app-fee-rate></td>
               </tr>
@@ -155,68 +157,6 @@
     </div>
   </div>
 </div>
-
-<ng-template #liquidDashboard>
-  <div class="container-xl dashboard-container" *ngIf="(auditStatus$ | async)?.isAuditSynced; else auditInProgress">
-
-    <div class="row row-cols-1 row-cols-md-2">
-
-      <div class="col card-wrapper liquid">
-        <div class="main-title" i18n="liquid.federation-holdings">Liquid Federation Holdings</div>
-        <div class="card">
-          <div class="card-body liquid">
-            <app-reserves-supply-stats [currentPeg$]="currentPeg$" [currentReserves$]="currentReserves$"></app-reserves-supply-stats>
-          </div>
-        </div>
-      </div>
-
-      <div class="col card-wrapper liquid">
-        <div class="main-title" i18n="liquid.federation-expired-utxos">Federation Timelock-Expired UTXOs</div>
-        <div class="card">
-          <div class="card-body liquid">
-            <app-expired-utxos-stats [expiredUtxos$]="expiredUtxos$"></app-expired-utxos-stats>
-          </div>
-        </div>
-      </div>
-  
-      <div class="col">
-        <div class="card-liquid card">
-          <h5 class="card-title" style="padding-top: 20px;" i18n="dashboard.lbtc-supply-against-btc-holdings">L-BTC Supply Against BTC Holdings</h5>
-          <div class="card-body pl-0" style="padding-top: 10px;">
-            <app-lbtc-pegs-graph [data]="fullHistory$ | async" [height]="lbtcPegGraphHeight"></app-lbtc-pegs-graph>
-          </div>
-        </div>
-      </div>
-  
-      <div class="col" style="margin-bottom: 1.47rem">
-        <div class="card-liquid card"> 
-          <div class="card-body">
-            <app-reserves-ratio-stats [fullHistory$]="fullHistory$" [emergencyUtxosStats$]="emergencySpentUtxosStats$"></app-reserves-ratio-stats>
-            <app-reserves-ratio [currentPeg]="currentPeg$ | async" [currentReserves]="currentReserves$ | async"></app-reserves-ratio>
-          </div>
-        </div>
-      </div>
-
-      <div class="col">
-        <div class="card card-liquid smaller">
-          <div class="card-body">
-            <app-recent-pegs-stats [pegsVolume$]="pegsVolume$"></app-recent-pegs-stats>
-            <app-recent-pegs-list [recentPegsList$]="recentPegsList$" [widget]="true"></app-recent-pegs-list>
-          </div>
-        </div>
-      </div>
-
-      <div class="col" style="margin-bottom: 1.47rem">
-        <div class="card-liquid card smaller">
-          <div class="card-body">
-            <app-federation-addresses-stats [federationAddressesNumber$]="federationAddressesNumber$" [federationUtxosNumber$]="federationUtxosNumber$"></app-federation-addresses-stats>
-            <app-federation-addresses-list [federationAddresses$]="federationAddresses$" [widget]="true"></app-federation-addresses-list>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</ng-template>
 
 <ng-template #replacementsSkeleton>
   <tbody>
@@ -233,7 +173,7 @@
   <tbody>
     <tr *ngFor="let i of [1,2,3,4,5,6]">
       <td class="table-cell-txid"><div class="skeleton-loader skeleton-loader-transactions"></div> </td>
-      <td class="table-cell-satoshis"><div class="skeleton-loader skeleton-loader-transactions"></div></td>
+      <td class="table-cell-shibes"><div class="skeleton-loader skeleton-loader-transactions"></div></td>
       <td class="table-cell-fiat" *ngIf="(network$ | async) === ''"><div class="skeleton-loader skeleton-loader-transactions"></div></td>
       <td class="table-cell-fees"><div class="skeleton-loader skeleton-loader-transactions"></div></td>
     </tr>
@@ -296,71 +236,9 @@
   </div>
 </ng-template>
 
-<ng-template #loadingSkeletonLiquid>
-  <div class="container-xl dashboard-container">
-
-    <div class="row row-cols-1 row-cols-md-2">
-
-      <div class="col card-wrapper liquid">
-        <div class="main-title" i18n="liquid.federation-holdings">Liquid Federation Holdings</div>
-        <div class="card">
-          <div class="card-body liquid">
-            <app-reserves-supply-stats></app-reserves-supply-stats>
-          </div>
-        </div>
-      </div>
-
-      <div class="col card-wrapper liquid">
-        <div class="main-title" i18n="liquid.federation-expired-utxos">Federation Timelock-Expired UTXOs</div>
-        <div class="card">
-          <div class="card-body liquid">
-            <app-expired-utxos-stats></app-expired-utxos-stats>
-          </div>
-        </div>
-      </div>
-  
-      <div class="col">
-        <div class="card-liquid card">
-          <h5 class="card-title" style="padding-top: 20px;" i18n="dashboard.lbtc-supply-against-btc-holdings">L-BTC Supply Against BTC Holdings</h5>
-          <div class="card-body pl-0" style="padding-top: 25px;">
-            <app-lbtc-pegs-graph [height]="lbtcPegGraphHeight"></app-lbtc-pegs-graph>
-          </div>
-        </div>
-      </div>
-  
-      <div class="col" style="margin-bottom: 1.47rem">
-        <div class="card-liquid card"> 
-          <div class="card-body">
-            <app-reserves-ratio-stats></app-reserves-ratio-stats>
-            <app-reserves-ratio></app-reserves-ratio>
-          </div>
-        </div>
-      </div>
-
-      <div class="col">
-        <div class="card card-liquid smaller">
-          <div class="card-body">
-            <app-recent-pegs-stats></app-recent-pegs-stats>
-            <app-recent-pegs-list [widget]="true"></app-recent-pegs-list>
-          </div>
-        </div>
-      </div>
-
-      <div class="col" style="margin-bottom: 1.47rem">
-        <div class="card-liquid card smaller">
-          <div class="card-body">
-            <app-federation-addresses-stats></app-federation-addresses-stats>
-            <app-federation-addresses-list [widget]="true"></app-federation-addresses-list>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</ng-template>
-
 <ng-template #auditInProgress>
-  <ng-container *ngIf="(auditStatus$ | async) as auditStatus; else loadingSkeletonLiquid">
-    <div class="in-progress-message" *ngIf="auditStatus.lastBlockAudit && auditStatus.bitcoinHeaders; else loadingSkeletonLiquid">
+  <ng-container *ngIf="(auditStatus$ | async) as auditStatus;">
+    <div class="in-progress-message" *ngIf="auditStatus.lastBlockAudit && auditStatus.bitcoinHeaders;">
       <div i18n="lightning.indexing-in-progress">Indexing in progress</div>
       <div>#{{ auditStatus.lastBlockAudit }} / #{{ auditStatus.bitcoinHeaders }}</div>
     </div>

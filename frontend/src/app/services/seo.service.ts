@@ -61,15 +61,6 @@ export class SeoService {
     this.metaService.updateTag({ property: 'og:meta:ready', content: 'ready'});
   }
 
-  setEnterpriseTitle(title: string, override: boolean = false) {
-    if (override) {
-      this.baseTitle = title;
-    } else {
-      this.baseTitle = title + ' - ' + this.baseTitle;
-    }
-    this.resetTitle();
-  }
-
   setDescription(newDescription: string): void {
     this.metaService.updateTag({ name: 'description', content: newDescription});
     this.metaService.updateTag({ name: 'twitter:description', content: newDescription});

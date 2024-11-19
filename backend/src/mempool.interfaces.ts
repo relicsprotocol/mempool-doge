@@ -120,7 +120,6 @@ export interface TransactionExtended extends IEsploraApi.Transaction {
   ancestors?: Ancestor[];
   descendants?: Ancestor[];
   bestDescendant?: BestDescendant | null;
-  cpfpChecked?: boolean;
   position?: {
     block: number,
     vsize: number,
@@ -141,8 +140,6 @@ export interface MempoolTransactionExtended extends TransactionExtended {
   adjustedFeePerVsize: number;
   inputs?: number[];
   lastBoosted?: number;
-  cpfpDirty?: boolean;
-  cpfpUpdated?: number;
 }
 
 export interface AuditTransaction {
@@ -174,8 +171,6 @@ export interface CompactThreadTransaction {
   feePerVsize: number;
   effectiveFeePerVsize: number;
   inputs: number[];
-  cpfpRoot?: number;
-  cpfpChecked?: boolean;
   dirty?: boolean;
 }
 
@@ -192,8 +187,6 @@ export interface ThreadTransaction {
   feePerVsize: number;
   effectiveFeePerVsize?: number;
   inputs: number[];
-  cpfpRoot?: string;
-  cpfpChecked?: boolean;
 }
 
 export interface Ancestor {
@@ -216,17 +209,6 @@ interface BestDescendant {
   txid: string;
   weight: number;
   fee: number;
-}
-
-export interface CpfpInfo {
-  ancestors: Ancestor[];
-  bestDescendant?: BestDescendant | null;
-  descendants?: Ancestor[];
-  effectiveFeePerVsize?: number;
-  sigops?: number;
-  adjustedVsize?: number,
-  acceleration?: boolean,
-  fee?: number;
 }
 
 export interface TransactionStripped {
@@ -313,8 +295,8 @@ export interface BlockExtension {
   totalInputs: number;
   totalOutputs: number;
   totalOutputAmt: number;
-  medianFeeAmt: number | null; // median fee in sats
-  feePercentiles: number[] | null, // fee percentiles in sats
+  medianFeeAmt: number | null; // median fee in shibes
+  feePercentiles: number[] | null, // fee percentiles in shibes
   segwitTotalTxs: number;
   segwitTotalSize: number;
   segwitTotalWeight: number;
@@ -375,19 +357,6 @@ export interface EffectiveFeeStats {
 export interface WorkingEffectiveFeeStats extends EffectiveFeeStats {
   minFee: number;
   maxFee: number;
-}
-
-export interface CpfpCluster {
-  root: string,
-  height: number,
-  txs: Ancestor[],
-  effectiveFeePerVsize: number,
-}
-
-export interface CpfpSummary {
-  transactions: MempoolTransactionExtended[];
-  clusters: CpfpCluster[];
-  version: number;
 }
 
 export interface Statistic {
@@ -454,14 +423,6 @@ export interface OptimizedStatistic {
 export interface TxTrackingInfo {
   replacedBy?: string,
   position?: { block: number, vsize: number, accelerated?: boolean, acceleratedBy?: number[], acceleratedAt?: number, feeDelta?: number },
-  cpfp?: {
-    ancestors?: Ancestor[],
-    bestDescendant?: Ancestor | null,
-    descendants?: Ancestor[] | null,
-    effectiveFeePerVsize?: number | null,
-    sigops: number,
-    adjustedVsize: number,
-  },
   utxoSpent?: { [vout: number]: { vin: number, txid: string } },
   accelerated?: boolean,
   acceleratedBy?: number[],

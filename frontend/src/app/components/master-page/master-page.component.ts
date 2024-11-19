@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { Env, StateService } from '../../services/state.service';
 import { Observable, merge, of, Subscription } from 'rxjs';
 import { LanguageService } from '../../services/language.service';
-import { EnterpriseService } from '../../services/enterprise.service';
 import { NavigationService } from '../../services/navigation.service';
 import { MenuComponent } from '../menu/menu.component';
 import { StorageService } from '../../services/storage.service';
@@ -13,7 +12,7 @@ import { StorageService } from '../../services/storage.service';
   templateUrl: './master-page.component.html',
   styleUrls: ['./master-page.component.scss'],
 })
-export class MasterPageComponent implements OnInit, OnDestroy {
+export class MasterPageComponent implements OnInit {
   @Input() headerVisible = true;
   @Input() footerVisibleOverride: boolean | null = null;
 
@@ -29,12 +28,8 @@ export class MasterPageComponent implements OnInit, OnDestroy {
   networkPaths$: Observable<Record<string, string>>;
   footerVisible = true;
   user: any = undefined;
-  servicesEnabled = false;
   menuOpen = false;
   isDropdownVisible: boolean;
-
-  enterpriseInfo: any;
-  enterpriseInfo$: Subscription;
 
   @ViewChild(MenuComponent)
   public menuComponent!: MenuComponent;
@@ -42,7 +37,6 @@ export class MasterPageComponent implements OnInit, OnDestroy {
   constructor(
     public stateService: StateService,
     private languageService: LanguageService,
-    private enterpriseService: EnterpriseService,
     private navigationService: NavigationService,
     private storageService: StorageService,
     private router: Router,
@@ -53,7 +47,6 @@ export class MasterPageComponent implements OnInit, OnDestroy {
     this.connectionState$ = this.stateService.connectionState$;
     this.network$ = merge(of(''), this.stateService.networkChanged$);
     this.urlLanguage = this.languageService.getLanguageForUrl();
-    this.subdomain = this.enterpriseService.getSubdomain();
     this.navigationService.subnetPaths.subscribe((paths) => {
       this.networkPaths = paths;
       if (this.footerVisibleOverride === null) {
@@ -66,26 +59,13 @@ export class MasterPageComponent implements OnInit, OnDestroy {
         this.footerVisible = this.footerVisibleOverride;
       }
     });
-    this.enterpriseInfo$ = this.enterpriseService.info$.subscribe(info => {
-      this.enterpriseInfo = info;
-    });
 
-    this.servicesEnabled = this.officialMempoolSpace && this.stateService.env.ACCELERATOR === true && this.stateService.network === '';
     this.refreshAuth();
-
-    const isServicesPage = this.router.url.includes('/services/');
-    this.menuOpen = isServicesPage && !this.isSmallScreen();
     this.setDropdownVisibility();
   }
 
   setDropdownVisibility(): void {
     const networks = [
-      this.env.TESTNET_ENABLED,
-      this.env.TESTNET4_ENABLED,
-      this.env.SIGNET_ENABLED,
-      this.env.LIQUID_ENABLED,
-      this.env.LIQUID_TESTNET_ENABLED,
-      this.env.MAINNET_ENABLED,
       this.env.DOGE_ENABLED,
     ];
     const enabledNetworksCount = networks.filter((networkEnabled) => networkEnabled).length;
@@ -126,12 +106,6 @@ export class MasterPageComponent implements OnInit, OnDestroy {
 
   menuToggled(isOpen: boolean): void {
     this.menuOpen = isOpen;
-  }
-
-  ngOnDestroy(): void {
-    if (this.enterpriseInfo$) {
-      this.enterpriseInfo$.unsubscribe();
-    }
   }
 
 }

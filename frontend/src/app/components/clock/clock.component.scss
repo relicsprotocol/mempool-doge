@@ -150,29 +150,29 @@
       height: var(--side-width);
       line-height: 100px;
       text-align: center;
-      background: #232838;
+      background: #a47c48;
       display: block;
       position: absolute;
     }
 
     .side.top {
-      transform: rotateX(90deg); 
+      transform: rotateX(90deg);
       margin-top: var(--neg-half-side);
     }
 
     .side.bottom {
       background: var(--primary);
-      transform: rotateX(-90deg); 
+      transform: rotateX(-90deg);
       margin-top: var(--half-side);
     }
 
     .side.right {
-      transform: rotateY(90deg); 
+      transform: rotateY(90deg);
       margin-left: var(--half-side);
     }
 
     .side.left {
-      transform: rotateY(-90deg); 
+      transform: rotateY(-90deg);
       margin-left: var(--neg-half-side);
     }
 

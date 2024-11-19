@@ -73,7 +73,6 @@ export const defaultAuditColors = {
   added: hexToColor('0099ff'),
   added_prioritized: darken(desaturate(hexToColor('0099ff'), 0.15), 0.85),
   prioritized: darken(desaturate(hexToColor('0099ff'), 0.3), 0.7),
-  accelerated: hexToColor('8f5ff6'),
 };
 
 const contrastColors: { [key: string]: ColorPalette } = {
@@ -104,7 +103,6 @@ export const contrastAuditColors = {
   added: hexToColor('00bb98'),
   added_prioritized: darken(desaturate(hexToColor('00bb98'), 0.15), 0.85),
   prioritized: darken(desaturate(hexToColor('00bb98'), 0.3), 0.7),
-  accelerated: hexToColor('8f5ff6'),
 };
 
 export function defaultColorFunction(
@@ -118,11 +116,6 @@ export function defaultColorFunction(
   const levelColor = colors.base[levelIndex] || colors.base[defaultMempoolFeeColors.length - 1];
   // Normal mode
   if (!tx.scene?.highlightingEnabled) {
-    if (tx.acc) {
-      return auditColors.accelerated;
-    } else {
-      return levelColor;
-    }
     return levelColor;
   }
   // Block audit
@@ -148,8 +141,6 @@ export function defaultColorFunction(
       return auditColors.prioritized;
     case 'selected':
       return colors.marginal[levelIndex] || colors.marginal[defaultMempoolFeeColors.length - 1];
-    case 'accelerated':
-      return auditColors.accelerated;
     case 'found':
       if (tx.context === 'projected') {
         return colors.audit[levelIndex] || colors.audit[defaultMempoolFeeColors.length - 1];
@@ -157,11 +148,7 @@ export function defaultColorFunction(
         return levelColor;
       }
     default:
-      if (tx.acc) {
-        return auditColors.accelerated;
-      } else {
-        return levelColor;
-      }
+      return levelColor;
   }
 }
 
@@ -181,11 +168,7 @@ export function ageColorFunction(
   relativeTime?: number,
   theme?: string,
 ): Color {
-  if (tx.acc || tx.status === 'accelerated') {
-    return auditColors.accelerated;
-  }
-
-  const color = theme !== 'contrast' && theme !== 'bukele' ? defaultColorFunction(tx, colors, auditColors, relativeTime) : contrastColorFunction(tx, colors, auditColors, relativeTime);
+  const color = defaultColorFunction(tx, colors, auditColors, relativeTime);
 
   const ageLevel = (!tx.time ? 0 : (0.8 * Math.tanh((1 / 15) * Math.log2((Math.max(1, 0.6 * ((relativeTime - tx.time) - 60)))))));
   return {

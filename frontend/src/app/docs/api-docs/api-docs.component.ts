@@ -30,7 +30,6 @@ export class ApiDocsComponent implements OnInit, AfterViewInit {
   officialMempoolInstance: boolean;
   auditEnabled: boolean;
   mobileViewport: boolean = false;
-  showMobileEnterpriseUpsell: boolean = true;
   timeLtrSubscription: Subscription;
   timeLtr: boolean = this.stateService.timeLtr.value;
   isMempoolSpaceBuild = this.stateService.isMempoolSpaceBuild;

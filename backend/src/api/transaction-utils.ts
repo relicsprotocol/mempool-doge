@@ -53,12 +53,26 @@ class TransactionUtils {
     if (forceCore === true) {
       transaction  = await bitcoinCoreApi.$getRawTransaction(txId, false, addPrevouts, lazyPrevouts);
     } else {
-      transaction  = await bitcoinApi.$getRawTransaction(txId, false, addPrevouts, lazyPrevouts);
+      transaction  = await bitcoinApi.$getRawTransaction(txId, false, Common.isDoge() ?? addPrevouts, lazyPrevouts);
     }
 
     if (Common.isLiquid()) {
       if (!isFinite(Number(transaction.fee))) {
         transaction.fee = Object.values(transaction.fee || {}).reduce((total, output) => total + output, 0);
+      }
+    } else if (Common.isDoge()) {
+      if (transaction.vin && transaction.vin.length === 1 && transaction.vin[0].is_coinbase) {
+        transaction.fee = 0;
+      } else {
+        // calculate fees based on inputs and outputs
+        let fee = 0;
+        for (const input of transaction.vin) {
+          fee += (input as unknown as { prevout: { value: number } }).prevout.value;
+        }
+        for (const output of transaction.vout) {
+          fee -= output.value;
+        }
+        transaction.fee = fee;
       }
     }
 
@@ -101,9 +115,9 @@ class TransactionUtils {
       // @ts-ignore
       return transaction;
     }
-    const feePerVbytes = (transaction.fee || 0) / (transaction.weight / 4);
+    const feePerVbytes = (transaction.fee || 0) / (transaction.size);
     const transactionExtended: TransactionExtended = Object.assign({
-      vsize: transaction.weight / 4,
+      vsize: transaction.size,
       feePerVsize: feePerVbytes,
       effectiveFeePerVsize: feePerVbytes,
     }, transaction);
@@ -114,20 +128,23 @@ class TransactionUtils {
   }
 
   public extendMempoolTransaction(transaction: IEsploraApi.Transaction): MempoolTransactionExtended {
-    const vsize = Math.ceil(transaction.weight / 4);
-    const fractionalVsize = (transaction.weight / 4);
-    let sigops = Common.isLiquid() ? 0 : (transaction.sigops != null ? transaction.sigops : this.countSigops(transaction));
-    // https://github.com/bitcoin/bitcoin/blob/e9262ea32a6e1d364fb7974844fadc36f931f8c6/src/policy/policy.cpp#L295-L298
-    const adjustedVsize = Math.max(fractionalVsize, sigops *  5); // adjusted vsize = Max(weight, sigops * bytes_per_sigop) / witness_scale_factor
-    const feePerVbytes = (transaction.fee || 0) / fractionalVsize;
+    const vsize = Math.ceil(transaction.size);  // Dogecoin uses size, not weight
+    const sigops = transaction.sigops != null ? transaction.sigops : this.countSigops(transaction); // Adjust for Dogecoin
+
+    // Dogecoin-specific: no need for witness scaling or segwit adjustments.
+    // Sigops should influence transaction priority, but no witness scaling factor.
+    const adjustedVsize = Math.max(vsize, sigops * 50); // Adjusted for Dogecoin's sigop behavior
+
+    const feePerVsize = (transaction.fee || 0) / vsize;
     const adjustedFeePerVsize = (transaction.fee || 0) / adjustedVsize;
+
     const transactionExtended: MempoolTransactionExtended = Object.assign(transaction, {
       order: this.txidToOrdering(transaction.txid),
       vsize,
       adjustedVsize,
       sigops,
-      feePerVsize: feePerVbytes,
-      adjustedFeePerVsize: adjustedFeePerVsize,
+      feePerVsize,
+      adjustedFeePerVsize,
       effectiveFeePerVsize: adjustedFeePerVsize,
     });
     if (!transactionExtended?.status?.confirmed && !transactionExtended.firstSeen) {

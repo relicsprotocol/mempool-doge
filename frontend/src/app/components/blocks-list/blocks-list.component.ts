@@ -64,14 +64,10 @@ export class BlocksList implements OnInit {
 
     if (!this.widget) {
       this.websocketService.want(['blocks']);
-      
+
       this.seoService.setTitle($localize`:@@8a7b4bd44c0ac71b2e72de0398b303257f7d2f54:Blocks`);
       this.ogService.setManualOgImage('recent-blocks.jpg');
-      if( this.stateService.network==='liquid'||this.stateService.network==='liquidtestnet' ) {
-        this.seoService.setDescription($localize`:@@meta.description.liquid.blocks:See the most recent Liquid${seoDescriptionNetwork(this.stateService.network)} blocks along with basic stats such as block height, block size, and more.`);
-      } else {
-        this.seoService.setDescription($localize`:@@meta.description.bitcoin.blocks:See the most recent Bitcoin${seoDescriptionNetwork(this.stateService.network)} blocks along with basic stats such as block height, block reward, block size, and more.`);
-      }
+      this.seoService.setDescription($localize`:@@meta.description.dogecoin.blocks:See the most recent Dogecoin${seoDescriptionNetwork(this.stateService.network)} blocks along with basic stats such as block height, block reward, block size, and more.`);
 
       this.blocksCountInitializedSubscription = combineLatest([this.blocksCountInitialized$, this.route.params]).pipe(
         filter(([blocksCountInitialized, _]) => blocksCountInitialized),
@@ -107,7 +103,7 @@ export class BlocksList implements OnInit {
 
     this.skeletonLines = this.widget === true ? [...Array(6).keys()] : [...Array(15).keys()];
     this.paginationMaxSize = window.matchMedia('(max-width: 670px)').matches ? 3 : 5;
-    
+
     this.blocks$ = combineLatest([
       this.fromHeightSubject.pipe(
         filter(fromBlockHeight => fromBlockHeight !== this.lastBlockHeightFetched),

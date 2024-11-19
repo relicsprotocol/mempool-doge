@@ -20,7 +20,6 @@ const unmatchedAuditColors = {
   added: setOpacity(defaultAuditColors.added, unmatchedOpacity),
   added_prioritized: setOpacity(defaultAuditColors.added_prioritized, unmatchedOpacity),
   prioritized: setOpacity(defaultAuditColors.prioritized, unmatchedOpacity),
-  accelerated: setOpacity(defaultAuditColors.accelerated, unmatchedOpacity),
 };
 const unmatchedContrastAuditColors = {
   censored: setOpacity(contrastAuditColors.censored, unmatchedOpacity),
@@ -28,7 +27,6 @@ const unmatchedContrastAuditColors = {
   added: setOpacity(contrastAuditColors.added, unmatchedOpacity),
   added_prioritized: setOpacity(contrastAuditColors.added_prioritized, unmatchedOpacity),
   prioritized: setOpacity(contrastAuditColors.prioritized, unmatchedOpacity),
-  accelerated: setOpacity(contrastAuditColors.accelerated, unmatchedOpacity),
 };
 
 @Component({
@@ -653,27 +651,14 @@ export class BlockOverviewGraphComponent implements AfterViewInit, OnDestroy, On
   getFilterColorFunction(flags: bigint, gradient: 'fee' | 'age'): ((tx: TxView) => Color) {
     return (tx: TxView) => {
       if ((this.filterMode === 'and' && (tx.bigintFlags & flags) === flags) || (this.filterMode === 'or' && (flags === 0n || (tx.bigintFlags & flags) > 0n))) {
-        if (this.themeService.theme !== 'contrast' && this.themeService.theme !== 'bukele') {
-          return (gradient === 'age') ? ageColorFunction(tx, defaultColors.fee, defaultAuditColors, this.relativeTime || (Date.now() / 1000)) : defaultColorFunction(tx, defaultColors.fee, defaultAuditColors, this.relativeTime || (Date.now() / 1000));
-        } else {
-          return (gradient === 'age') ? ageColorFunction(tx, contrastColors.fee, contrastAuditColors, this.relativeTime || (Date.now() / 1000)) : contrastColorFunction(tx, contrastColors.fee, contrastAuditColors, this.relativeTime || (Date.now() / 1000));
-        }
+        return (gradient === 'age') ? ageColorFunction(tx, defaultColors.fee, defaultAuditColors, this.relativeTime || (Date.now() / 1000)) : defaultColorFunction(tx, defaultColors.fee, defaultAuditColors, this.relativeTime || (Date.now() / 1000));
       } else {
-        if (this.themeService.theme !== 'contrast' && this.themeService.theme !== 'bukele') {
-          return (gradient === 'age') ? { r: 1, g: 1, b: 1, a: 0.05 } : defaultColorFunction(
-            tx,
-            defaultColors.unmatchedfee,
-            unmatchedAuditColors,
-            this.relativeTime || (Date.now() / 1000)
-          );
-        } else {
-          return (gradient === 'age') ? { r: 1, g: 1, b: 1, a: 0.05 } : contrastColorFunction(
-            tx,
-            contrastColors.unmatchedfee,
-            unmatchedContrastAuditColors,
-            this.relativeTime || (Date.now() / 1000)
-          );
-        }
+        return (gradient === 'age') ? { r: 1, g: 1, b: 1, a: 0.05 } : defaultColorFunction(
+          tx,
+          defaultColors.unmatchedfee,
+          unmatchedAuditColors,
+          this.relativeTime || (Date.now() / 1000)
+        );
       }
     };
   }

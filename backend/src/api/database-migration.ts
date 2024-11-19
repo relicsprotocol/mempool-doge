@@ -3,7 +3,6 @@ import DB from '../database';
 import logger from '../logger';
 import { Common } from './common';
 import blocksRepository from '../repositories/BlocksRepository';
-import cpfpRepository from '../repositories/CpfpRepository';
 import { RowDataPacket } from 'mysql2';
 
 class DatabaseMigration {
@@ -421,8 +420,6 @@ class DatabaseMigration {
     }
 
     if (databaseSchemaVersion < 47) {
-      await this.$executeQuery('ALTER TABLE `blocks` ADD cpfp_indexed tinyint(1) DEFAULT 0');
-      await this.$executeQuery(this.getCreateCPFPTableQuery(), await this.$checkIfTableExists('cpfp_clusters'));
       await this.$executeQuery(this.getCreateTransactionsTableQuery(), await this.$checkIfTableExists('transactions'));
       await this.updateToSchemaVersion(47);
     }
@@ -447,22 +444,17 @@ class DatabaseMigration {
     }
 
     if (databaseSchemaVersion < 50) {
-      await this.$executeQuery('ALTER TABLE `blocks` DROP COLUMN `cpfp_indexed`');
       await this.updateToSchemaVersion(50);
     }
 
     if (databaseSchemaVersion < 51) {
-      await this.$executeQuery('ALTER TABLE `cpfp_clusters` ADD INDEX `height` (`height`)');
       await this.updateToSchemaVersion(51);
     }
 
     if (databaseSchemaVersion < 52) {
-      await this.$executeQuery(this.getCreateCompactCPFPTableQuery(), await this.$checkIfTableExists('compact_cpfp_clusters'));
       await this.$executeQuery(this.getCreateCompactTransactionsTableQuery(), await this.$checkIfTableExists('compact_transactions'));
       try {
-        await this.$convertCompactCpfpTables();
         await this.$executeQuery('DROP TABLE IF EXISTS `transactions`');
-        await this.$executeQuery('DROP TABLE IF EXISTS `cpfp_clusters`');
         await this.updateToSchemaVersion(52);
       } catch (e) {
         logger.warn('' + (e instanceof Error ? e.message : e));
@@ -566,7 +558,7 @@ class DatabaseMigration {
       await this.$executeQuery('ALTER TABLE `blocks_templates` ADD INDEX `version` (`version`)');
       await this.updateToSchemaVersion(67);
     }
-    
+
     if (databaseSchemaVersion < 68 && config.MEMPOOL.NETWORK === "liquid") {
       await this.$executeQuery('TRUNCATE TABLE elements_pegs');
       await this.$executeQuery('ALTER TABLE elements_pegs ADD PRIMARY KEY (txid, txindex);');
@@ -973,7 +965,7 @@ class DatabaseMigration {
       pegtxid varchar(65) NOT NULL,
       pegindex int(11) NOT NULL,
       pegblocktime int(11) unsigned NOT NULL,
-      PRIMARY KEY (txid, txindex), 
+      PRIMARY KEY (txid, txindex),
       FOREIGN KEY (bitcoinaddress) REFERENCES federation_addresses (bitcoinaddress)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;`;
   }
@@ -1210,33 +1202,11 @@ class DatabaseMigration {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;`;
   }
 
-  private getCreateCPFPTableQuery(): string {
-    return `CREATE TABLE IF NOT EXISTS cpfp_clusters (
-      root varchar(65) NOT NULL,
-      height int(10) NOT NULL,
-      txs JSON DEFAULT NULL,
-      fee_rate double unsigned NOT NULL,
-      PRIMARY KEY (root)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;`;
-  }
-
   private getCreateTransactionsTableQuery(): string {
     return `CREATE TABLE IF NOT EXISTS transactions (
       txid varchar(65) NOT NULL,
       cluster varchar(65) DEFAULT NULL,
       PRIMARY KEY (txid),
-      FOREIGN KEY (cluster) REFERENCES cpfp_clusters (root) ON DELETE SET NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;`;
-  }
-
-  private getCreateCompactCPFPTableQuery(): string {
-    return `CREATE TABLE IF NOT EXISTS compact_cpfp_clusters (
-      root binary(32) NOT NULL,
-      height int(10) NOT NULL,
-      txs BLOB DEFAULT NULL,
-      fee_rate float unsigned,
-      PRIMARY KEY (root),
-      INDEX (height)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;`;
   }
 
@@ -1275,49 +1245,6 @@ class DatabaseMigration {
     await this.$executeQuery('DELETE FROM `pools`');
     await this.$executeQuery('ALTER TABLE pools AUTO_INCREMENT = 1');
     await this.$executeQuery(`UPDATE state SET string = NULL WHERE name = 'pools_json_sha'`);
-  }
-
-  private async $convertCompactCpfpTables(): Promise<void> {
-    try {
-      const batchSize = 250;
-      const maxHeight = await blocksRepository.$mostRecentBlockHeight() || 0;
-      const [minHeightRows]: any = await DB.query(`SELECT MIN(height) AS minHeight from cpfp_clusters`);
-      const minHeight = (minHeightRows.length && minHeightRows[0].minHeight != null) ? minHeightRows[0].minHeight : maxHeight;
-      let height = maxHeight;
-
-      // Logging
-      let timer = new Date().getTime() / 1000;
-      const startedAt = new Date().getTime() / 1000;
-
-      while (height > minHeight) {
-        const [rows] = await DB.query(
-          `
-            SELECT * from cpfp_clusters
-            WHERE height <= ? AND height > ?
-            ORDER BY height
-          `,
-          [height, height - batchSize]
-        ) as RowDataPacket[][];
-        if (rows?.length) {
-          await cpfpRepository.$batchSaveClusters(rows.map(row => {
-            return {
-              root: row.root,
-              height: row.height,
-              txs: JSON.parse(row.txs),
-              effectiveFeePerVsize: row.fee_rate,
-            };
-          }));
-        }
-
-        const elapsed = new Date().getTime() / 1000 - timer;
-        const runningFor = new Date().getTime() / 1000 - startedAt;
-        logger.debug(`Migrated cpfp data from block ${height} to ${height - batchSize} in ${elapsed.toFixed(2)} seconds | total elapsed: ${runningFor.toFixed(2)} seconds`);
-        timer = new Date().getTime() / 1000;
-        height -= batchSize;
-      }
-    } catch (e) {
-      logger.warn(`Failed to migrate cpfp transaction data`);
-    }
   }
 
   private async $fixBadV1AuditBlocks(): Promise<void> {

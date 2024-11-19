@@ -12,7 +12,7 @@ import { WebsocketService } from '../../services/websocket.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CalculatorComponent implements OnInit {
-  satoshis = 10000;
+  shibes = 10000;
   form: FormGroup;
 
   currency$ = this.stateService.fiatCurrency$;
@@ -28,8 +28,8 @@ export class CalculatorComponent implements OnInit {
   ngOnInit(): void {
     this.form = this.formBuilder.group({
       fiat: [0],
-      bitcoin: [0],
-      satoshis: [0],
+      dogecoin: [0],
+      shibes: [0],
     });
 
     this.lastFiatPrice$ = this.stateService.conversions$.asObservable()
@@ -40,7 +40,7 @@ export class CalculatorComponent implements OnInit {
     let currency;
     this.price$ = this.currency$.pipe(
       switchMap((result) => {
-        currency = result; 
+        currency = result;
         return this.stateService.conversions$.asObservable();
       }),
       map((conversions) => {
@@ -57,33 +57,33 @@ export class CalculatorComponent implements OnInit {
       if (isNaN(value)) {
         return;
       }
-      this.form.get('bitcoin').setValue(rate, { emitEvent: false });
-      this.form.get('satoshis').setValue(satsRate, { emitEvent: false } );
+      this.form.get('dogecoin').setValue(rate, { emitEvent: false });
+      this.form.get('shibes').setValue(satsRate, { emitEvent: false } );
     });
 
     combineLatest([
       this.price$,
-      this.form.get('bitcoin').valueChanges
+      this.form.get('dogecoin').valueChanges
     ]).subscribe(([price, value]) => {
       const rate = parseFloat((value * price).toFixed(8));
       if (isNaN(value)) {
         return;
       }
       this.form.get('fiat').setValue(rate, { emitEvent: false } );
-      this.form.get('satoshis').setValue(Math.round(value * 100_000_000), { emitEvent: false } );
+      this.form.get('shibes').setValue(Math.round(value * 100_000_000), { emitEvent: false } );
     });
 
     combineLatest([
       this.price$,
-      this.form.get('satoshis').valueChanges
+      this.form.get('shibes').valueChanges
     ]).subscribe(([price, value]) => {
       const rate = parseFloat((value / 100_000_000 * price).toFixed(8));
-      const bitcoinRate = (value / 100_000_000).toFixed(8);
+      const dogecoinRate = (value / 100_000_000).toFixed(8);
       if (isNaN(value)) {
         return;
       }
       this.form.get('fiat').setValue(rate, { emitEvent: false } );
-      this.form.get('bitcoin').setValue(bitcoinRate, { emitEvent: false });
+      this.form.get('dogecoin').setValue(dogecoinRate, { emitEvent: false });
     });
 
   }
@@ -98,13 +98,13 @@ export class CalculatorComponent implements OnInit {
       value = '0';
     }
     let sanitizedValue = this.removeExtraDots(value);
-    if (name === 'bitcoin' && this.countDecimals(sanitizedValue) > 8) {
+    if (name === 'dogecoin' && this.countDecimals(sanitizedValue) > 8) {
       sanitizedValue = this.toFixedWithoutRounding(sanitizedValue, 8);
     }
     if (sanitizedValue === '') {
       sanitizedValue = '0';
     }
-    if (name === 'satoshis') {
+    if (name === 'shibes') {
       sanitizedValue = parseFloat(sanitizedValue).toFixed(0);
     }
     formControl.setValue(sanitizedValue, {emitEvent: true});

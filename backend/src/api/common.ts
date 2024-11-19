@@ -10,15 +10,11 @@ import logger from '../logger';
 import { getVarIntLength, opcodes, parseMultisigScript } from '../utils/bitcoin-script';
 
 // Bitcoin Core default policy settings
-const MAX_STANDARD_TX_WEIGHT = 400_000;
+const MAX_STANDARD_TX_WEIGHT = 100_000;
 const MAX_BLOCK_SIGOPS_COST = 80_000;
 const MAX_STANDARD_TX_SIGOPS_COST = (MAX_BLOCK_SIGOPS_COST / 5);
 const MIN_STANDARD_TX_NONWITNESS_SIZE = 65;
 const MAX_P2SH_SIGOPS = 15;
-const MAX_STANDARD_P2WSH_STACK_ITEMS = 100;
-const MAX_STANDARD_P2WSH_STACK_ITEM_SIZE = 80;
-const MAX_STANDARD_TAPSCRIPT_STACK_ITEM_SIZE = 80;
-const MAX_STANDARD_P2WSH_SCRIPT_SIZE = 3600;
 const MAX_STANDARD_SCRIPTSIG_SIZE = 1650;
 const DUST_RELAY_TX_FEE = 3;
 const MAX_OP_RETURN_RELAY = 83;
@@ -28,7 +24,12 @@ export class Common {
   static nativeAssetId = config.MEMPOOL.NETWORK === 'liquidtestnet' ?
     '144c654344aa716d6f3abcc1ca90e5641e4e2a7f633bc09fe3baf64585819a49'
   : '6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d';
+  static _isDoge = config.MEMPOOL.NETWORK === 'doge';
   static _isLiquid = config.MEMPOOL.NETWORK === 'liquid' || config.MEMPOOL.NETWORK === 'liquidtestnet';
+
+  static isDoge(): boolean {
+    return this._isDoge;
+  }
 
   static isLiquid(): boolean {
     return this._isLiquid;
@@ -643,7 +644,8 @@ export class Common {
       vsize: tx.weight / 4,
       value: tx.vout.reduce((acc, vout) => acc + (vout.value ? vout.value : 0), 0),
       acc: tx.acceleration || undefined,
-      rate: tx.effectiveFeePerVsize,
+      // todo this was `effectiveFeePerVsize`, doesn't matter now but maybe later
+      rate: tx.fee / tx.size,
       time: tx.firstSeen || undefined,
     };
   }
@@ -729,13 +731,6 @@ export class Common {
     );
   }
 
-  static cpfpIndexingEnabled(): boolean {
-    return (
-      Common.indexingEnabled() &&
-      config.MEMPOOL.CPFP_INDEXING === true
-    );
-  }
-
   static setDateMidnight(date: Date): void {
     date.setUTCHours(0);
     date.setUTCMinutes(0);
@@ -759,7 +754,7 @@ export class Common {
     if (id.indexOf('/') !== -1) {
       id = id.slice(0, -2);
     }
-    
+
     if (id.indexOf('x') !== -1) { // Already a short id
       return id;
     }
@@ -856,46 +851,49 @@ export class Common {
     }
   }
 
-  static calcEffectiveFeeStatistics(transactions: { weight: number, fee: number, effectiveFeePerVsize?: number, txid: string, acceleration?: boolean }[]): EffectiveFeeStats {
-    const sortedTxs = transactions.map(tx => { return { txid: tx.txid, weight: tx.weight, rate: tx.effectiveFeePerVsize || ((tx.fee || 0) / (tx.weight / 4)) }; }).sort((a, b) => a.rate - b.rate);
+  // todo we should actually use weight again in this fn
+  static calcEffectiveFeeStatistics(transactions: { weight: number, fee: number, size: number, txid: string, acceleration?: boolean }[]): EffectiveFeeStats {
+    // Replace 'weight' with 'size' and adjust rate calculation
+    const sortedTxs = transactions.map(tx => {
+      return {
+        txid: tx.txid,
+        size: tx.size,
+        // todo could potentially use `effectiveFeePerVsize` here
+        rate: tx.fee / tx.size
+      };
+      // coinbase transactions have 0 fee rate (todo: find out why they are  here)
+    }).sort((a, b) => a.rate - b.rate);
 
-    let weightCount = 0;
+    let sizeCount = 0;
     let medianFee = 0;
-    let medianWeight = 0;
+    let medianSize = 0;
 
-    // calculate the "medianFee" as the average fee rate of the middle 0.25% weight units of transactions
-    const halfWidth = config.MEMPOOL.BLOCK_WEIGHT_UNITS / 800;
-    const leftBound = Math.floor((config.MEMPOOL.BLOCK_WEIGHT_UNITS / 2) - halfWidth);
-    const rightBound = Math.ceil((config.MEMPOOL.BLOCK_WEIGHT_UNITS / 2) + halfWidth);
-    for (let i = 0; i < sortedTxs.length && weightCount < rightBound; i++) {
-      const left = weightCount;
-      const right = weightCount + sortedTxs[i].weight;
+    // Adjust the block size for Dogecoin (block size is 1MB, i.e., 1,000,000 bytes)
+    const blockSize = Math.min(
+      1_000_000,
+      transactions.reduce((total, tx) => total + tx.size, 0)
+    );
+    const halfWidth = blockSize / 200;
+    const leftBound = Math.floor((blockSize / 2) - halfWidth);
+    const rightBound = Math.ceil((blockSize / 2) + halfWidth);
+
+    for (let i = 0; i < sortedTxs.length && sizeCount < rightBound; i++) {
+      const left = sizeCount;
+      const right = sizeCount + sortedTxs[i].size;
+
       if (right > leftBound) {
-        const weight = Math.min(right, rightBound) - Math.max(left, leftBound);
-        medianFee += (sortedTxs[i].rate * (weight / 4) );
-        medianWeight += weight;
+        const size = Math.min(right, rightBound) - Math.max(left, leftBound);
+        medianFee += (sortedTxs[i].rate * size);
+        medianSize += size;
       }
-      weightCount += sortedTxs[i].weight;
+      sizeCount += sortedTxs[i].size;
     }
-    const medianFeeRate = medianWeight ? (medianFee / (medianWeight / 4)) : 0;
 
-    // minimum effective fee heuristic:
-    // lowest of
-    // a) the 1st percentile of effective fee rates
-    // b) the minimum effective fee rate in the last 2% of transactions (in block order)
-    const minFee = Math.min(
-      Common.getNthPercentile(1, sortedTxs).rate,
-      transactions.slice(-transactions.length / 50).reduce((min, tx) => { return Math.min(min, tx.effectiveFeePerVsize || ((tx.fee || 0) / (tx.weight / 4))); }, Infinity)
-    );
+    const medianFeeRate = medianSize ? (medianFee / medianSize) : 0;
 
-    // maximum effective fee heuristic:
-    // highest of
-    // a) the 99th percentile of effective fee rates
-    // b) the maximum effective fee rate in the first 2% of transactions (in block order)
-    const maxFee = Math.max(
-      Common.getNthPercentile(99, sortedTxs).rate,
-      transactions.slice(0, transactions.length / 50).reduce((max, tx) => { return Math.max(max, tx.effectiveFeePerVsize || ((tx.fee || 0) / (tx.weight / 4))); }, 0)
-    );
+    // Minimum effective fee heuristic:
+    const minFee = sortedTxs[0].rate || 0;
+    const maxFee = sortedTxs[sortedTxs.length - 1].rate || 0;
 
     return {
       medianFee: medianFeeRate,
@@ -1051,14 +1049,14 @@ export class Common {
 /**
  * Class to calculate average fee rates of a list of transactions
  * at certain weight percentiles, in a single pass
- * 
+ *
  * init with:
  *   maxWeight - the total weight to measure percentiles relative to (e.g. 4MW for a single block)
  *   percentileBandWidth - how many weight units to average over for each percentile (as a % of maxWeight)
  *   percentiles - an array of weight percentiles to compute, in %
- * 
+ *
  * then call .processNext(tx) for each transaction, in descending order
- * 
+ *
  * retrieve the final results with .getFeeStats()
  */
 export class OnlineFeeStatsCalculator {
@@ -1105,7 +1103,7 @@ export class OnlineFeeStatsCalculator {
     while (left < right) {
       if (right > this.leftBound) {
         this.inBand = true;
-        const txRate = (tx.rate || tx.effectiveFeePerVsize || tx.feePerVsize || 0);
+        const txRate = (tx.rate || tx.effectiveFeePerVsize || tx.feePerVsize || tx.fee / (tx.weight / 4) || 0);
         const weight = Math.min(right, this.rightBound) - Math.max(left, this.leftBound);
         this.totalBandFee += (txRate * weight);
         this.totalBandWeight += weight;
@@ -1154,12 +1152,5 @@ export class OnlineFeeStatsCalculator {
       maxFee: this.feeRange[this.feeRange.length - 1].max,
       feeRange: this.feeRange.map(f => f.avg),
     };
-  }
-
-  getFeeStats(): EffectiveFeeStats {
-    const stats = this.getRawFeeStats();
-    stats.feeRange[0] = stats.minFee;
-    stats.feeRange[stats.feeRange.length - 1] = stats.maxFee;
-    return stats;
   }
 }

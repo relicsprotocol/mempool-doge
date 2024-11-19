@@ -66,7 +66,7 @@ export class BlockchainBlocksComponent implements OnInit, OnChanges, OnDestroy {
   blockPadding: number = 30;
 
   gradientColors = {
-    '': ['var(--mainnet-alt)', 'var(--primary)'],
+    '': ['var(--tertiary)', 'var(--primary)'],
     doge: ['var(--doge)', 'var(--doge-alt)'],
     liquid: ['var(--liquid)', 'var(--testnet-alt)'],
     'liquidtestnet': ['var(--liquidtestnet)', 'var(--liquidtestnet-alt)'],
@@ -136,6 +136,8 @@ export class BlockchainBlocksComponent implements OnInit, OnChanges, OnDestroy {
           }
           const latestHeight = blocks[0].height;
           const animate = this.chainTip != null && latestHeight > this.chainTip;
+
+          console.log("blocks", blocks)
 
           for (const block of blocks) {
             if (block?.extras) {
@@ -416,12 +418,7 @@ export class BlockchainBlocksComponent implements OnInit, OnChanges, OnDestroy {
 
   getMinBlockFee(block: BlockExtended): number {
     if (block?.extras?.feeRange) {
-      // heuristic to check if feeRange is adjusted for effective rates
-      if (block.extras.medianFee === block.extras.feeRange[3]) {
-        return block.extras.feeRange[1];
-      } else {
-        return block.extras.feeRange[0];
-      }
+      return block.extras.feeRange[0];
     }
     return 0;
   }

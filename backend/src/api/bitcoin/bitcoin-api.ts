@@ -344,6 +344,14 @@ class BitcoinApi implements AbstractBitcoinApi {
     }
     if (this.rawMempoolCache && this.rawMempoolCache[transaction.txid]) {
       mempoolEntry = this.rawMempoolCache[transaction.txid];
+      if (!mempoolEntry.fees) {
+        mempoolEntry.fees = {
+          base: mempoolEntry.fees,
+          ancestor: mempoolEntry.ancestorfees!,
+          descendant: mempoolEntry.descendantfees!,
+          modified: mempoolEntry.modifiedfee!,
+        };
+      }
     } else {
       mempoolEntry = await this.$getMempoolEntry(transaction.txid);
     }
@@ -375,7 +383,16 @@ class BitcoinApi implements AbstractBitcoinApi {
   }
 
   private $getMempoolEntry(txid: string): Promise<IBitcoinApi.MempoolEntry> {
-    return this.bitcoindClient.getMempoolEntry(txid);
+    const entry = this.bitcoindClient.getMempoolEntry(txid);
+    return {
+      ...entry,
+      fees: {
+        base: entry.fee,
+        modified: entry.modifiedfee,
+        ancestor: entry.ancestorfees,
+        descendant: entry.descendantfees,
+      }
+    };
   }
 
   private $getRawMempoolVerbose(): Promise<IBitcoinApi.RawMempool> {

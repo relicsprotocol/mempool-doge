@@ -22,16 +22,14 @@ import { ApiService } from '../../services/api.service';
 import { SeoService } from '../../services/seo.service';
 import { seoDescriptionNetwork } from '../../shared/common.utils';
 import { Filter, TransactionFlags } from '../../shared/filters.utils';
-import { BlockExtended, CpfpInfo, RbfTree, MempoolPosition, DifficultyAdjustment, Acceleration, AccelerationPosition } from '../../interfaces/node-api.interface';
+import { BlockExtended, CpfpInfo, RbfTree, MempoolPosition, DifficultyAdjustment } from '../../interfaces/node-api.interface';
 import { PriceService } from '../../services/price.service';
 import { ServicesApiServices } from '../../services/services-api.service';
-import { EnterpriseService } from '../../services/enterprise.service';
 import { ZONE_SERVICE } from '../../injection-tokens';
 import { TrackerStage } from './tracker-bar.component';
 import { MiningService, MiningStats } from '../../services/mining.service';
 import { ETA, EtaService } from '../../services/eta.service';
-import { getTransactionFlags, getUnacceleratedFeeRate } from '../../shared/transaction.utils';
-import { RelativeUrlPipe } from '../../shared/pipes/relative-url/relative-url.pipe';
+import { getTransactionFlags, getFeeRate } from '../../shared/transaction.utils';
 
 
 interface Pool {
@@ -46,7 +44,6 @@ interface AuditStatus {
   added?: boolean;
   prioritized?: boolean;
   delayed?: number;
-  accelerated?: boolean;
   conflict?: boolean;
   coinbase?: boolean;
 }
@@ -63,7 +60,6 @@ export class TrackerComponent implements OnInit, OnDestroy {
   txId: string;
   txInBlockIndex: number;
   mempoolPosition: MempoolPosition;
-  accelerationPositions: AccelerationPosition[];
   isLoadingTx = true;
   loadingCachedTx = false;
   loadingPosition = true;
@@ -75,7 +71,6 @@ export class TrackerComponent implements OnInit, OnDestroy {
   fetchCpfpSubscription: Subscription;
   fetchRbfSubscription: Subscription;
   fetchCachedTxSubscription: Subscription;
-  fetchAccelerationSubscription: Subscription;
   txReplacedSubscription: Subscription;
   mempoolPositionSubscription: Subscription;
   mempoolBlocksSubscription: Subscription;
@@ -89,22 +84,18 @@ export class TrackerComponent implements OnInit, OnDestroy {
   rbfInfo: RbfTree;
   cpfpInfo: CpfpInfo | null;
   hasCpfp: boolean = false;
-  accelerationInfo: Acceleration | null = null;
   sigops: number | null;
   adjustedVsize: number | null;
   pool: Pool | null;
   auditStatus: AuditStatus | null;
-  isAcceleration: boolean = false;
   filters: Filter[] = [];
   showCpfpDetails = false;
   miningStats: MiningStats;
   fetchCpfp$ = new Subject<string>();
   fetchRbfHistory$ = new Subject<string>();
   fetchCachedTx$ = new Subject<string>();
-  fetchAcceleration$ = new Subject<string>();
   fetchMiningInfo$ = new Subject<{ hash: string, height: number, txid: string }>();
   txChanged$ = new BehaviorSubject<boolean>(false); // triggered whenever this.tx changes (long term, we should refactor to make this.tx an observable itself)
-  isAccelerated$ = new BehaviorSubject<boolean>(false); // refactor this to make isAccelerated an observable itself
   ETA$: Observable<ETA | null>;
   isCached: boolean = false;
   now = Date.now();
@@ -117,15 +108,9 @@ export class TrackerComponent implements OnInit, OnDestroy {
   blockchainWidth: number = 600;
 
   hasEffectiveFeeRate: boolean;
-  accelerateCtaType: 'alert' | 'button' = 'button';
-  acceleratorAvailable: boolean = this.stateService.env.ACCELERATOR && this.stateService.network === '';
-  eligibleForAcceleration: boolean = false;
-  accelerationFlowCompleted = false;
   scrollIntoAccelPreview = false;
   auditEnabled: boolean = this.stateService.env.AUDIT && this.stateService.env.BASE_MODULE === 'mempool' && this.stateService.env.MINING_DASHBOARD === true;
 
-  enterpriseInfo: any;
-  enterpriseInfo$: Subscription;
   officialMempoolSpace = this.stateService.env.OFFICIAL_MEMPOOL_SPACE;
 
   constructor(
@@ -140,7 +125,6 @@ export class TrackerComponent implements OnInit, OnDestroy {
     private servicesApiService: ServicesApiServices,
     private seoService: SeoService,
     private priceService: PriceService,
-    private enterpriseService: EnterpriseService,
     private miningService: MiningService,
     private router: Router,
     private cd: ChangeDetectorRef,
@@ -151,23 +135,14 @@ export class TrackerComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.onResize();
 
-    this.acceleratorAvailable = this.stateService.env.OFFICIAL_MEMPOOL_SPACE && this.stateService.env.ACCELERATOR && this.stateService.network === '';
-
     this.miningService.getMiningStats('1w').subscribe(stats => {
       this.miningStats = stats;
-    });
-
-    this.enterpriseService.page();
-
-    this.enterpriseInfo$ = this.enterpriseService.info$.subscribe(info => {
-      this.enterpriseInfo = info;
     });
 
     this.websocketService.want(['blocks', 'mempool-blocks']);
     this.stateService.networkChanged$.subscribe(
       (network) => {
         this.network = network;
-        this.acceleratorAvailable = this.stateService.env.OFFICIAL_MEMPOOL_SPACE && this.stateService.env.ACCELERATOR && this.stateService.network === '';
       }
     );
 
@@ -264,7 +239,6 @@ export class TrackerComponent implements OnInit, OnDestroy {
 
       if (!this.tx) {
         this.tx = tx;
-        this.checkAccelerationEligibility();
         this.isCached = true;
         if (tx.fee === undefined) {
           this.tx.fee = 0;
@@ -277,30 +251,6 @@ export class TrackerComponent implements OnInit, OnDestroy {
 
         this.fetchRbfHistory$.next(this.tx.txid);
         this.txChanged$.next(true);
-      }
-    });
-
-    this.fetchAccelerationSubscription = this.fetchAcceleration$.pipe(
-      filter(() => this.stateService.env.ACCELERATOR === true),
-      tap(() => {
-        this.accelerationInfo = null;
-      }),
-      switchMap((blockHash: string) => {
-        return this.servicesApiService.getAccelerationHistory$({ blockHash });
-      }),
-      catchError(() => {
-        return of(null);
-      })
-    ).subscribe((accelerationHistory) => {
-      for (const acceleration of accelerationHistory) {
-        if (acceleration.txid === this.txId && (acceleration.status === 'completed' || acceleration.status === 'completed_provisional') && acceleration.pools.includes(acceleration.minedByPoolUniqueId)) {
-          const boostCost = acceleration.boostCost || acceleration.bidBoost;
-          acceleration.acceleratedFeeRate = Math.max(acceleration.effectiveFee, acceleration.effectiveFee + boostCost) / acceleration.effectiveVsize;
-          acceleration.boost = boostCost;
-
-          this.accelerationInfo = acceleration;
-          this.setIsAccelerated();
-        }
       }
     });
 
@@ -328,16 +278,14 @@ export class TrackerComponent implements OnInit, OnDestroy {
             map(audit => {
               const isAdded = audit.addedTxs.includes(txid);
               const isPrioritized = audit.prioritizedTxs.includes(txid);
-              const isAccelerated = audit.acceleratedTxs.includes(txid);
               const isConflict = audit.fullrbfTxs.includes(txid);
               const isExpected = audit.template.some(tx => tx.txid === txid);
               return {
-                seen: isExpected || isPrioritized || isAccelerated,
+                seen: isExpected || isPrioritized,
                 expected: isExpected,
                 added: isAdded,
                 prioritized: isPrioritized,
                 conflict: isConflict,
-                accelerated: isAccelerated,
               };
             }),
             catchError(() => {
@@ -359,14 +307,12 @@ export class TrackerComponent implements OnInit, OnDestroy {
       if (txPosition && txPosition.txid === this.txId && txPosition.position) {
         this.loadingPosition = false;
         this.mempoolPosition = txPosition.position;
-        this.accelerationPositions = txPosition.accelerationPositions;
         if (this.tx && !this.tx.status.confirmed) {
-          const txFeePerVSize = getUnacceleratedFeeRate(this.tx, this.tx.acceleration || this.mempoolPosition?.accelerated);
+          const txFeePerVSize = getFeeRate(this.tx);
           this.stateService.markBlock$.next({
             txid: txPosition.txid,
             txFeePerVSize,
             mempoolPosition: this.mempoolPosition,
-            accelerationPositions: this.accelerationPositions,
           });
           this.txInBlockIndex = this.mempoolPosition.block;
 
@@ -374,24 +320,12 @@ export class TrackerComponent implements OnInit, OnDestroy {
             this.setCpfpInfo(txPosition.cpfp);
           }
 
-          if (txPosition.position?.accelerated) {
-            this.tx.acceleration = true;
-            this.tx.acceleratedBy = txPosition.position?.acceleratedBy;
-          }
-
           if (this.replaced) {
             this.trackerStage = 'replaced';
-          }
-
-          if (this.mempoolPosition.accelerated && this.showAccelerationSummary) {
-            setTimeout(() => {
-              this.accelerationFlowCompleted = true;
-            }, 2000);
           }
         }
       } else {
         this.mempoolPosition = null;
-        this.accelerationPositions = null;
       }
     });
 
@@ -410,7 +344,7 @@ export class TrackerComponent implements OnInit, OnDestroy {
           );
           const network = this.stateService.network === 'liquid' || this.stateService.network === 'liquidtestnet' ? 'Liquid' : 'Bitcoin';
           const seoDescription = seoDescriptionNetwork(this.stateService.network);
-          this.seoService.setDescription($localize`:@@meta.description.bitcoin.transaction:Get real-time status, addresses, fees, script info, and more for ${network}${seoDescription} transaction with txid ${this.txId}.`);
+          this.seoService.setDescription($localize`:@@meta.description.dogecoin.transaction:Get real-time status, addresses, fees, script info, and more for ${network}${seoDescription} transaction with txid ${this.txId}.`);
           this.resetTransaction();
           return merge(
             of(true),
@@ -449,7 +383,6 @@ export class TrackerComponent implements OnInit, OnDestroy {
           this.seoService.clearSoft404();
 
           this.tx = tx;
-          this.checkAccelerationEligibility();
           this.isCached = false;
           if (tx.fee === undefined) {
             this.tx.fee = 0;
@@ -476,7 +409,6 @@ export class TrackerComponent implements OnInit, OnDestroy {
           } else {
             this.trackerStage = 'confirmed';
             this.loadingPosition = false;
-            this.fetchAcceleration$.next(tx.status.block_hash);
             this.fetchMiningInfo$.next({ hash: tx.status.block_hash, height: tx.status.block_height, txid: tx.txid });
             this.transactionTime = 0;
           }
@@ -487,13 +419,12 @@ export class TrackerComponent implements OnInit, OnDestroy {
             });
             this.fetchCpfp$.next(this.tx.txid);
           } else {
-            const txFeePerVSize = getUnacceleratedFeeRate(this.tx, this.tx.acceleration || this.mempoolPosition?.accelerated);
+            const txFeePerVSize = getFeeRate(this.tx);
             if (tx.cpfpChecked) {
               this.stateService.markBlock$.next({
                 txid: tx.txid,
                 txFeePerVSize,
                 mempoolPosition: this.mempoolPosition,
-                accelerationPositions: this.accelerationPositions,
               });
               this.setCpfpInfo({
                 ancestors: tx.ancestors,
@@ -535,12 +466,7 @@ export class TrackerComponent implements OnInit, OnDestroy {
         this.txChanged$.next(true);
         this.trackerStage = 'confirmed';
         this.stateService.markBlock$.next({ blockHeight: block.height });
-        if (this.tx.acceleration || (this.accelerationInfo && ['accelerating', 'completed_provisional', 'completed'].includes(this.accelerationInfo.status))) {
-          this.audioService.playSound('wind-chimes-harp-ascend');
-        } else {
-          this.audioService.playSound('magic');
-        }
-        this.fetchAcceleration$.next(block.id);
+        this.audioService.playSound('magic');
         this.fetchMiningInfo$.next({ hash: block.id, height: block.height, txid: this.tx.txid });
       }
     });
@@ -596,13 +522,12 @@ export class TrackerComponent implements OnInit, OnDestroy {
       this.stateService.mempoolTxPosition$.pipe(startWith(null)),
       this.stateService.mempoolBlocks$.pipe(startWith(null)),
       this.stateService.difficultyAdjustment$.pipe(startWith(null)),
-      this.isAccelerated$,
       this.txChanged$,
     ]).pipe(
-      filter(([position, mempoolBlocks, da, isAccelerated]) => {
+      filter(([position, mempoolBlocks, da]) => {
         return this.tx && !this.tx?.status?.confirmed && position && this.tx.txid === position.txid;
       }),
-      map(([position, mempoolBlocks, da, isAccelerated]) => {
+      map(([position, mempoolBlocks, da]) => {
         return this.etaService.calculateETA(
           this.network,
           this.tx,
@@ -610,8 +535,6 @@ export class TrackerComponent implements OnInit, OnDestroy {
           position,
           da,
           this.miningStats,
-          isAccelerated,
-          this.accelerationPositions,
         );
       }),
       tap(eta => {
@@ -674,11 +597,6 @@ export class TrackerComponent implements OnInit, OnDestroy {
     } else {
       this.tx.effectiveFeePerVsize = cpfpInfo.effectiveFeePerVsize || this.tx.effectiveFeePerVsize || this.tx.feePerVsize || (this.tx.fee / (this.tx.weight / 4));
     }
-    if (cpfpInfo.acceleration) {
-      this.tx.acceleration = cpfpInfo.acceleration;
-      this.tx.acceleratedBy = cpfpInfo.acceleratedBy;
-      this.setIsAccelerated(firstCpfp);
-    }
     this.txChanged$.next(true);
 
     this.cpfpInfo = cpfpInfo;
@@ -713,62 +631,12 @@ export class TrackerComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  setIsAccelerated(initialState: boolean = false) {
-    this.isAcceleration = (this.tx.acceleration || (this.accelerationInfo && this.pool && this.accelerationInfo.pools.some(pool => (pool === this.pool.id))));
-    if (this.isAcceleration) {
-      // this immediately returns cached stats if we fetched them recently
-      this.miningService.getMiningStats('1w').subscribe(stats => {
-        this.miningStats = stats;
-        this.isAccelerated$.next(this.isAcceleration); // hack to trigger recalculation of ETA without adding another source observable
-      });
-      this.accelerationFlowCompleted = true;
-    }
-    this.isAccelerated$.next(this.isAcceleration);
-  }
-
-  dismissAccelAlert(): void {
-    this.accelerateCtaType = 'button';
-  }
-
-  onAccelerateClicked() {
-    if (!this.txId) {
-      return;
-    }
-    this.accelerationFlowCompleted = false;
-    if (this.showAccelerationSummary) {
-      this.scrollIntoAccelPreview = true;
-    }
-    return false;
-  }
-
   get isLoading(): boolean {
     return this.isLoadingTx || this.loadingCachedTx || this.loadingPosition;
   }
 
-  checkAccelerationEligibility() {
-    if (this.tx) {
-      this.tx.flags = getTransactionFlags(this.tx, null, null, this.tx.status?.block_time, this.stateService.network);
-      const replaceableInputs = (this.tx.flags & (TransactionFlags.sighash_none | TransactionFlags.sighash_acp)) > 0n;
-      const highSigop = (this.tx.sigops * 20) > this.tx.weight;
-      this.eligibleForAcceleration = !replaceableInputs && !highSigop;
-    } else {
-      this.eligibleForAcceleration = false;
-    }
-  }
-
   get cashappEligible(): boolean {
     return this.mempoolPosition?.block > 0 && this.tx.weight < 4000;
-  }
-
-  get showAccelerationSummary(): boolean {
-    return (
-      this.tx
-      && !this.replaced
-      && !this.isCached
-      && this.acceleratorAvailable
-      && this.eligibleForAcceleration
-      && !this.accelerationFlowCompleted
-    );
   }
 
   resetTransaction() {
@@ -790,13 +658,10 @@ export class TrackerComponent implements OnInit, OnDestroy {
     this.rbfReplaces = [];
     this.filters = [];
     this.showCpfpDetails = false;
-    this.accelerationInfo = null;
     this.txInBlockIndex = null;
     this.mempoolPosition = null;
     this.pool = null;
     this.auditStatus = null;
-    this.accelerationPositions = null;
-    this.eligibleForAcceleration = false;
     this.trackerStage = 'waiting';
     document.body.scrollTo(0, 0);
     this.leaveTransaction();
@@ -823,7 +688,6 @@ export class TrackerComponent implements OnInit, OnDestroy {
     this.fetchCpfpSubscription.unsubscribe();
     this.fetchRbfSubscription.unsubscribe();
     this.fetchCachedTxSubscription.unsubscribe();
-    this.fetchAccelerationSubscription.unsubscribe();
     this.txReplacedSubscription.unsubscribe();
     this.mempoolBlocksSubscription.unsubscribe();
     this.mempoolPositionSubscription.unsubscribe();
@@ -831,7 +695,6 @@ export class TrackerComponent implements OnInit, OnDestroy {
     this.blocksSubscription.unsubscribe();
     this.miningSubscription?.unsubscribe();
     this.currencyChangeSubscription?.unsubscribe();
-    this.enterpriseInfo$?.unsubscribe();
     this.leaveTransaction();
   }
 }

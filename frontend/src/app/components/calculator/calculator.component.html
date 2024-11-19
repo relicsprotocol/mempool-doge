@@ -18,18 +18,18 @@
 
         <div class="input-group input-group-lg mb-1">
           <div class="input-group-prepend">
-            <span class="input-group-text">BTC</span>
+            <span class="input-group-text">DOGE</span>
           </div>
-          <input type="text" class="form-control" formControlName="bitcoin" (input)="transformInput('bitcoin')" (click)="selectAll($event)">
-          <app-clipboard [button]="true" [text]="form.get('bitcoin').value" [class]="'btn btn-lg btn-secondary ml-1'"></app-clipboard>
+          <input type="text" class="form-control" formControlName="dogecoin" (input)="transformInput('dogecoin')" (click)="selectAll($event)">
+          <app-clipboard [button]="true" [text]="form.get('dogecoin').value" [class]="'btn btn-lg btn-secondary ml-1'"></app-clipboard>
         </div>
 
         <div class="input-group input-group-lg mb-1">
           <div class="input-group-prepend">
-            <span class="input-group-text" i18n="shared.sats">sats</span>
+            <span class="input-group-text" i18n="shared.shibes">shibes</span>
           </div>
-          <input type="text" class="form-control" formControlName="satoshis" (input)="transformInput('satoshis')" (click)="selectAll($event)">
-          <app-clipboard [button]="true" [text]="form.get('satoshis').value" [class]="'btn btn-lg btn-secondary ml-1'"></app-clipboard>
+          <input type="text" class="form-control" formControlName="shibes" (input)="transformInput('shibes')" (click)="selectAll($event)">
+          <app-clipboard [button]="true" [text]="form.get('shibes').value" [class]="'btn btn-lg btn-secondary ml-1'"></app-clipboard>
         </div>
       </form>
 
@@ -38,16 +38,16 @@
     <br>
 
     <div class="row justify-content-center">
-      <div class="bitcoin-satoshis-text">
+      <div class="dogecoin-shibes-text">
         ₿
-         <span [innerHTML]="form.get('bitcoin').value | bitcoinsatoshis"></span> 
-        <span class="sats" i18n="shared.sats">sats</span>
+         <span [innerHTML]="form.get('dogecoin').value | dogecoinshibes"></span>
+        <span class="shibes" i18n="shared.shibes">shibes</span>
       </div>
     </div>
 
     <div class="row justify-content-center">
       <div class="fiat-text">
-        <app-fiat [value]="form.get('satoshis').value" digitsInfo="1.0-0"></app-fiat>
+        <app-fiat [value]="form.get('shibes').value" digitsInfo="1.0-0"></app-fiat>
       </div>
     </div>
 

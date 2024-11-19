@@ -1,7 +1,6 @@
 import { Component, OnInit, ChangeDetectionStrategy, EventEmitter, Output, ViewChild, HostListener, ElementRef, Input } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { EventType, NavigationStart, Router } from '@angular/router';
-import { AssetsService } from '../../services/assets.service';
 import { Env, StateService } from '../../services/state.service';
 import { Observable, of, Subject, zip, BehaviorSubject, combineLatest } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, catchError, map, startWith,  tap } from 'rxjs/operators';
@@ -9,7 +8,7 @@ import { ElectrsApiService } from '../../services/electrs-api.service';
 import { RelativeUrlPipe } from '../../shared/pipes/relative-url/relative-url.pipe';
 import { ApiService } from '../../services/api.service';
 import { SearchResultsComponent } from './search-results/search-results.component';
-import { Network, findOtherNetworks, getRegex, getTargetUrl, needBaseModuleChange } from '../../shared/regex.utils';
+import { Network, findOtherNetworks, getRegex, getTargetUrl } from '../../shared/regex.utils';
 
 @Component({
   selector: 'app-search-form',
@@ -21,7 +20,6 @@ export class SearchFormComponent implements OnInit {
   @Input() hamburgerOpen = false;
   env: Env;
   network = '';
-  assets: object = {};
   pools: object[] = [];
   isSearching = false;
   isTypeaheading$ = new BehaviorSubject<boolean>(false);
@@ -59,7 +57,6 @@ export class SearchFormComponent implements OnInit {
   constructor(
     private formBuilder: UntypedFormBuilder,
     private router: Router,
-    private assetsService: AssetsService,
     private stateService: StateService,
     private electrsApiService: ElectrsApiService,
     private apiService: ApiService,
@@ -94,13 +91,6 @@ export class SearchFormComponent implements OnInit {
     this.searchForm = this.formBuilder.group({
       searchText: ['', Validators.required],
     });
-
-    if (this.network === 'liquid' || this.network === 'liquidtestnet') {
-      this.assetsService.getAssetsMinimalJson$
-        .subscribe((assets) => {
-          this.assets = assets;
-        });
-    }
 
     const searchText$ = this.searchForm.get('searchText').valueChanges
     .pipe(
@@ -177,7 +167,6 @@ export class SearchFormComponent implements OnInit {
               addresses: [],
               nodes: [],
               channels: [],
-              liquidAsset: [],
               pools: []
             };
           }
@@ -197,7 +186,6 @@ export class SearchFormComponent implements OnInit {
           const matchesAddress = !matchesTxId && this.regexAddress.test(searchText);
           const publicKey = matchesAddress && searchText.startsWith('0');
           const otherNetworks = findOtherNetworks(searchText, this.network as any || 'doge', this.env);
-          const liquidAsset = this.assets ? (this.assets[searchText] || []) : [];
           const pools = this.pools.filter(pool => pool["name"].toLowerCase().includes(searchText.toLowerCase())).slice(0, 10);
 
           if (matchesDateTime && searchText.indexOf('/') !== -1) {
@@ -222,7 +210,6 @@ export class SearchFormComponent implements OnInit {
             otherNetworks: otherNetworks,
             nodes: lightningResults.nodes,
             channels: lightningResults.channels,
-            liquidAsset: liquidAsset,
             pools: pools
           };
         })
@@ -273,23 +260,7 @@ export class SearchFormComponent implements OnInit {
         parseInt(searchText) <= this.stateService.latestBlockHeight ? this.navigate('/block/', searchText) : this.isSearching = false;
       } else if (this.regexTransaction.test(searchText)) {
         const matches = this.regexTransaction.exec(searchText);
-        if (this.network === 'liquid' || this.network === 'liquidtestnet') {
-          if (this.assets[matches[0]]) {
-            this.navigate('/assets/asset/', matches[0]);
-          }
-          this.electrsApiService.getAsset$(matches[0])
-            .subscribe(
-              () => { this.navigate('/assets/asset/', matches[0]); },
-              () => {
-                this.electrsApiService.getBlock$(matches[0])
-                  .subscribe(
-                    (block) => { this.navigate('/block/', matches[0], { state: { data: { block } } }); },
-                    () => { this.navigate('/tx/', matches[0]); });
-              }
-            );
-        } else {
-          this.navigate('/tx/', matches[0]);
-        }
+        this.navigate('/tx/', matches[0]);
       } else if (this.regexDate.test(searchText) || this.regexUnixTimestamp.test(searchText)) {
         let timestamp: number;
         this.regexDate.test(searchText) ? timestamp = Math.floor(new Date(searchText).getTime() / 1000) : timestamp = searchText;
@@ -310,16 +281,12 @@ export class SearchFormComponent implements OnInit {
 
 
   navigate(url: string, searchText: string, extras?: any, swapNetwork?: string) {
-    if (needBaseModuleChange(this.env.BASE_MODULE as 'liquid' | 'mempool', swapNetwork as Network)) {
-      window.location.href = getTargetUrl(swapNetwork as Network, searchText, this.env);
-    } else {
-      this.router.navigate([this.relativeUrlPipe.transform(url, swapNetwork), searchText], extras);
-      this.searchTriggered.emit();
-      this.searchForm.setValue({
-        searchText: '',
-      });
-      this.isSearching = false;
-    }
+    this.router.navigate([this.relativeUrlPipe.transform(url, swapNetwork), searchText], extras);
+    this.searchTriggered.emit();
+    this.searchForm.setValue({
+      searchText: '',
+    });
+    this.isSearching = false;
   }
 
   getMiningPools(): Observable<any> {

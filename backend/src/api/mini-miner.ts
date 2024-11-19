@@ -1,4 +1,3 @@
-import { Acceleration } from './acceleration/acceleration';
 import { MempoolTransactionExtended } from '../mempool.interfaces';
 import logger from '../logger';
 
@@ -15,7 +14,7 @@ export interface GraphTx {
 
   ancestorcount: number;
   ancestorsize: number;
-  fees: { // in sats
+  fees: { // in shibes
     base: number;
     ancestor: number;
   };
@@ -35,7 +34,6 @@ interface TemplateTransaction {
   fee: number;
   feeDelta: number;
   ancestors: string[];
-  cluster: string[];
   effectiveFeePerVsize: number;
 }
 
@@ -104,8 +102,8 @@ export function getSameBlockRelatives(tx: MempoolTransactionExtended, transactio
 export function convertToGraphTx(tx: MempoolTransactionExtended, spendMap?: Map<string, MempoolTransactionExtended | string>): GraphTx {
   return {
     txid: tx.txid,
-    vsize: Math.max(tx.sigops * 5, Math.ceil(tx.weight / 4)),
-    weight: tx.weight,
+    vsize: Math.max(tx.sigops * 5, Math.ceil(tx.vsize)),
+    weight: tx.vsize,
     fees: {
       base: tx.fee || 0,
       ancestor: tx.fee || 0,
@@ -114,7 +112,7 @@ export function convertToGraphTx(tx: MempoolTransactionExtended, spendMap?: Map<
     spentby: spendMap ? (tx.vout.map((vout, index) => { const spend = spendMap.get(`${tx.txid}:${index}`); return (spend?.['txid'] || spend); }).filter(spent => spent) as string[]) : [],
 
     ancestorcount: 1,
-    ancestorsize: Math.max(tx.sigops * 5, Math.ceil(tx.weight / 4)),
+    ancestorsize: Math.max(tx.sigops * 5, Math.ceil(tx.vsize)),
     ancestors: new Map<string, GraphTx>(),
     ancestorRate: 0,
     individualRate: 0,
@@ -221,36 +219,6 @@ export function initializeRelatives(mempoolTxs: Map<string, GraphTx>): Map<strin
 }
 
 /**
- * Remove a cluster of transactions from an in-mempool dependency graph
- * and update the survivors' scores and ancestors
- *
- * @param cluster
- * @param ancestors
- */
-export function removeAncestors(cluster: Map<string, GraphTx>, all: Map<string, GraphTx>): void {
-  // remove
-  cluster.forEach(tx => {
-    all.delete(tx.txid);
-  });
-
-  // update survivors
-  all.forEach(tx => {
-    cluster.forEach(remove => {
-      if (tx.ancestors?.has(remove.txid)) {
-        // remove as dependency
-        tx.ancestors.delete(remove.txid);
-        tx.depends = tx.depends.filter(parent => parent !== remove.txid);
-        // update ancestor sizes and fees
-        tx.ancestorsize -= remove.vsize;
-        tx.fees.ancestor -= remove.fees.base;
-      }
-    });
-    // recalculate fee rates
-    setAncestorScores(tx);
-  });
-}
-
-/**
  * Take a mempool transaction, and set the fee rates and ancestor score
  *
  * @param tx
@@ -270,20 +238,20 @@ export function mempoolComparator(a: GraphTx, b: GraphTx): number {
 * Build a block using an approximation of the transaction selection algorithm from Bitcoin Core
 * (see BlockAssembler in https://github.com/bitcoin/bitcoin/blob/master/src/node/miner.cpp)
 */
-export function makeBlockTemplate(candidates: MempoolTransactionExtended[], accelerations: Acceleration[], maxBlocks: number = 8, weightLimit: number = BLOCK_WEIGHT_UNITS, sigopLimit: number = BLOCK_SIGOPS): TemplateTransaction[] {
+export function makeBlockTemplate(candidates: MempoolTransactionExtended[], maxBlocks: number = 8, weightLimit: number = BLOCK_WEIGHT_UNITS, sigopLimit: number = BLOCK_SIGOPS): TemplateTransaction[] {
   const auditPool: Map<string, MinerTransaction> = new Map();
   const mempoolArray: MinerTransaction[] = [];
 
   candidates.forEach(tx => {
     // initializing everything up front helps V8 optimize property access later
-    const adjustedVsize = Math.ceil(Math.max(tx.weight / 4, 5 * (tx.sigops || 0)));
+    const adjustedVsize = Math.ceil(Math.max(tx.vsize, 5 * (tx.sigops || 0)));
     const feePerVsize = (tx.fee / adjustedVsize);
     auditPool.set(tx.txid, {
       txid: tx.txid,
       order: txidToOrdering(tx.txid),
       fee: tx.fee,
       feeDelta: 0,
-      weight: tx.weight,
+      weight: tx.vsize,
       adjustedVsize,
       feePerVsize: feePerVsize,
       effectiveFeePerVsize: feePerVsize,
@@ -292,7 +260,6 @@ export function makeBlockTemplate(candidates: MempoolTransactionExtended[], acce
       inputs: (tx.vin?.map(vin => vin.txid) || []) as string[],
       relativesSet: false,
       ancestors: [],
-      cluster: [],
       ancestorMap: new Map<string, MinerTransaction>(),
       children: new Set<MinerTransaction>(),
       ancestorFee: 0,
@@ -304,17 +271,6 @@ export function makeBlockTemplate(candidates: MempoolTransactionExtended[], acce
     });
     mempoolArray.push(auditPool.get(tx.txid) as MinerTransaction);
   });
-
-  // set accelerated effective fee
-  for (const acceleration of accelerations) {
-    const tx = auditPool.get(acceleration.txid);
-    if (tx) {
-      tx.feeDelta = acceleration.max_bid;
-      tx.feePerVsize = ((tx.fee + tx.feeDelta) / tx.adjustedVsize);
-      tx.effectiveFeePerVsize = tx.feePerVsize;
-      tx.dependencyRate = tx.feePerVsize;
-    }
-  }
 
   // Build relatives graph & calculate ancestor scores
   for (const tx of mempoolArray) {
@@ -361,7 +317,6 @@ export function makeBlockTemplate(candidates: MempoolTransactionExtended[], acce
         const ancestors: MinerTransaction[] = Array.from(nextTx.ancestorMap.values());
         // sort ancestors by dependency graph (equivalent to sorting by ascending ancestor count)
         const sortedTxSet = [...ancestors.sort((a, b) => { return (a.ancestorMap.size || 0) - (b.ancestorMap.size || 0); }), nextTx];
-        const clusterTxids = sortedTxSet.map(tx => tx.txid);
         const effectiveFeeRate = Math.min(nextTx.dependencyRate || Infinity, nextTx.ancestorFee / nextTx.ancestorVsize);
         const used: MinerTransaction[] = [];
         while (sortedTxSet.length) {
@@ -375,7 +330,6 @@ export function makeBlockTemplate(candidates: MempoolTransactionExtended[], acce
           if (ancestor.effectiveFeePerVsize !== effectiveFeeRate) {
             ancestor.effectiveFeePerVsize = effectiveFeeRate;
           }
-          ancestor.cluster = clusterTxids;
           transactions.push(ancestor);
           blockWeight += ancestor.weight;
           blockSigops += ancestor.sigops;

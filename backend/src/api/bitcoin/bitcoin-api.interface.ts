@@ -31,6 +31,9 @@ export namespace IBitcoinApi {
     depends: string[];               //  (string) parent transaction id
     spentby: string[];               //  (array) unconfirmed transactions spending outputs from this transaction
     'bip125-replaceable': boolean;   //  (boolean) Whether this transaction could be replaced due to BIP125 (replace-by-fee)
+    ancestorfees?: number;           //  (numeric) For doge compatibility
+    descendantfees?: number;         //  (numeric) For doge compatibility
+    modifiedfee?: number;            //  (numeric) For doge compatibility
   }
 
   export interface Block {
@@ -165,11 +168,11 @@ export namespace IBitcoinApi {
     timeout: number;                 // (numeric) the median time past of a block at which the deployment is considered failed if not yet locked in
     since: number;                   // (numeric) height of the first block to which the status applies
     statistics: {                    // (object) numeric statistics about BIP9 signalling for a softfork (only for started status)
-      period: number;                // (numeric) the length in blocks of the BIP9 signalling period 
-      threshold: number;             // (numeric) the number of blocks with the version bit set required to activate the feature 
-      elapsed: number;               // (numeric) the number of blocks elapsed since the beginning of the current period 
-      count: number;                 // (numeric) the number of blocks with the version bit set in the current period 
-      possible: boolean;             // (boolean) returns false if there are not enough blocks left in this period to pass activation threshold 
+      period: number;                // (numeric) the length in blocks of the BIP9 signalling period
+      threshold: number;             // (numeric) the number of blocks with the version bit set required to activate the feature
+      elapsed: number;               // (numeric) the number of blocks elapsed since the beginning of the current period
+      count: number;                 // (numeric) the number of blocks with the version bit set in the current period
+      possible: boolean;             // (boolean) returns false if there are not enough blocks left in this period to pass activation threshold
     }
   }
 

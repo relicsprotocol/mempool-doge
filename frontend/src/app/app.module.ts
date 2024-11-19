@@ -9,7 +9,6 @@ import { ElectrsApiService } from './services/electrs-api.service';
 import { StateService } from './services/state.service';
 import { CacheService } from './services/cache.service';
 import { PriceService } from './services/price.service';
-import { EnterpriseService } from './services/enterprise.service';
 import { WebsocketService } from './services/websocket.service';
 import { AudioService } from './services/audio.service';
 import { PreloadService } from './services/preload.service';
@@ -39,7 +38,6 @@ const providers = [
   SeoService,
   OpenGraphService,
   StorageService,
-  EnterpriseService,
   LanguageService,
   ThemeService,
   ShortenStringPipe,

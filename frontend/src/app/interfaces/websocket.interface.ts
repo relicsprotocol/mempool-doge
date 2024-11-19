@@ -1,7 +1,7 @@
 import { SafeResourceUrl } from '@angular/platform-browser';
 import { ILoadingIndicators } from '../services/state.service';
 import { Transaction } from './electrs.interface';
-import { Acceleration, BlockExtended, DifficultyAdjustment, RbfTree, TransactionStripped } from './node-api.interface';
+import { BlockExtended, DifficultyAdjustment, RbfTree, TransactionStripped } from './node-api.interface';
 
 export interface WebsocketResponse {
   backend?: 'esplora' | 'electrum' | 'none';
@@ -35,7 +35,6 @@ export interface WebsocketResponse {
   'track-mempool-block'?: number;
   'track-rbf'?: string;
   'track-rbf-summary'?: boolean;
-  'track-accelerations'?: boolean;
   'watch-mempool'?: boolean;
   'refresh-blocks'?: boolean;
 }
@@ -54,7 +53,6 @@ export interface ReplacementInfo {
   newVsize: number;
 }
 export interface MempoolBlock {
-  blink?: boolean;
   height?: number;
   blockSize: number;
   blockVSize: number;
@@ -95,19 +93,13 @@ export interface MempoolBlockDeltaCompressed {
   changed: MempoolDeltaChange[];
 }
 
-export interface AccelerationDelta {
-  added: Acceleration[];
-  removed: string[];
-  reset?: boolean;
-}
-
 export interface MempoolInfo {
   loaded: boolean;                 //  (boolean) True if the mempool is fully loaded
   size: number;                    //  (numeric) Current tx count
   bytes: number;                   //  (numeric) Sum of all virtual transaction sizes as defined in BIP 141.
   usage: number;                   //  (numeric) Total memory usage for the mempool
   maxmempool: number;              //  (numeric) Maximum memory usage for the mempool
-  mempoolminfee: number;           //  (numeric) Minimum fee rate in BTC/kB for tx to be accepted.
+  mempoolminfee: number;           //  (numeric) Minimum fee rate in DOGE/kB for tx to be accepted.
   minrelaytxfee: number;           //  (numeric) Current minimum relay fee for transactions
 }
 

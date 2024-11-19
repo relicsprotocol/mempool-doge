@@ -47,8 +47,6 @@ export class TxBowtieGraphTooltipComponent implements OnChanges {
   viewFiatSubscription: Subscription;
   chainTipSubscription: Subscription;
 
-  nativeAssetId = this.stateService.network === 'liquidtestnet' ? environment.nativeTestAssetId : environment.nativeAssetId;
-
   @ViewChild('tooltip') tooltipElement: ElementRef<HTMLCanvasElement>;
 
   constructor(
@@ -121,7 +119,7 @@ export class TxBowtieGraphTooltipComponent implements OnChanges {
             tap((price) => this.blockConversions[changes.line.currentValue.timestamp] = price),
           ).subscribe();
         }
-      } 
+      }
     }
   }
 

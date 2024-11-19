@@ -56,24 +56,6 @@ const ADDRESS_PREFIXES = {
     },
     bech32: 'tb1',
   },
-  liquid: {
-    base58: {
-      pubkey: ['P','Q'],
-      script: ['G','H'],
-      confidential: ['V'],
-    },
-    bech32: 'ex1',
-    confidential: 'lq1',
-  },
-  liquidtestnet: {
-    base58: {
-      pubkey: ['F'],
-      script: ['8','9'],
-      confidential: ['V'], // TODO: check if this is actually correct
-    },
-    bech32: 'tex1',
-    confidential: 'tlq1',
-  },
 };
 
 // precompiled regexes for common address types (excluding prefixes)

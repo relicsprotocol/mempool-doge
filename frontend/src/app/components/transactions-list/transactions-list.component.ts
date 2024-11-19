@@ -5,8 +5,7 @@ import { Observable, ReplaySubject, BehaviorSubject, merge, Subscription, of, fo
 import { Outspend, Transaction, Vin, Vout } from '../../interfaces/electrs.interface';
 import { ElectrsApiService } from '../../services/electrs-api.service';
 import { environment } from '../../../environments/environment';
-import { AssetsService } from '../../services/assets.service';
-import { filter, map, tap, switchMap, shareReplay, catchError } from 'rxjs/operators';
+import { filter, map, tap, switchMap, catchError } from 'rxjs/operators';
 import { BlockExtended } from '../../interfaces/node-api.interface';
 import { ApiService } from '../../services/api.service';
 import { PriceService } from '../../services/price.service';
@@ -56,7 +55,6 @@ export class TransactionsListComponent implements OnInit, OnChanges {
     private cacheService: CacheService,
     private electrsApiService: ElectrsApiService,
     private apiService: ApiService,
-    private assetsService: AssetsService,
     private ref: ChangeDetectorRef,
     private priceService: PriceService,
     private storageService: StorageService,
@@ -65,12 +63,6 @@ export class TransactionsListComponent implements OnInit, OnChanges {
   ngOnInit(): void {
     this.latestBlock$ = this.stateService.blocks$.pipe(map((blocks) => blocks[0]));
     this.stateService.networkChanged$.subscribe((network) => this.network = network);
-
-    if (this.network === 'liquid' || this.network === 'liquidtestnet') {
-      this.assetsService.getAssetsMinimalJson$.subscribe((assets) => {
-        this.assetsMinimal = assets;
-      });
-    }
 
     this.outspendsSubscription = merge(
       this.refreshOutspends$
@@ -275,10 +267,10 @@ export class TransactionsListComponent implements OnInit, OnChanges {
     if (this.network === 'liquid' || this.network === 'liquidtestnet') {
       return;
     }
-    const modes = ['btc', 'sats', 'fiat'];
+    const modes = ['doge', 'shibes', 'fiat'];
     const oldIndex = modes.indexOf(this.stateService.viewAmountMode$.value);
     const newIndex = (oldIndex + 1) % modes.length;
-    this.stateService.viewAmountMode$.next(modes[newIndex] as 'btc' | 'sats' | 'fiat');
+    this.stateService.viewAmountMode$.next(modes[newIndex] as 'doge' | 'shibes' | 'fiat');
     this.storageService.setValue('view-amount-mode', modes[newIndex]);
   }
 

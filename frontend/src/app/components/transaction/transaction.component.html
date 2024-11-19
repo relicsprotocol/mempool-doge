@@ -62,8 +62,6 @@
     </div>
   }
 
-  <span id="accelerate"></span>
-
   <ng-template [ngIf]="!isLoadingTx && !error">
 
     <!-- CPFP Details -->
@@ -124,35 +122,6 @@
       </div>
     </ng-template>
 
-    <!-- Accelerator -->
-    <ng-container *ngIf="!tx?.status?.confirmed && showAccelerationSummary && (ETA$ | async) as eta;">
-      <br>
-      <div class="title float-left mb-1">
-        <h2><a [href]="[ isMempoolSpaceBuild ? '/accelerator' : 'https://mempool.space/accelerator']" [target]="isMempoolSpaceBuild ? '' : 'blank'"><app-svg-images name="accelerator" [height]="isMobile ? '35px' : '45px'"></app-svg-images></a></h2>
-      </div>
-      <button type="button" class="btn btn-outline-info accelerator-toggle btn-sm float-right" [class.hide-on-mobile]="hasAccelerationDetails" (click)="closeAccelerator()" i18n="accelerator.hide">Hide accelerator</button>
-      <button *ngIf="hasAccelerationDetails" class="btn btn-sm btn-outline-info details-button float-right ml-2" (click)="showAccelerationDetails = !showAccelerationDetails" i18n="transaction.details|Transaction Details">Details</button>
-
-      <div class="clearfix"></div>
-
-      <app-accelerate-checkout
-        *ngIf="(da$ | async) as da;"
-        [cashappEnabled]="cashappEligible"
-        [advancedEnabled]="true"
-        [tx]="tx"
-        [accelerating]="isAcceleration"
-        [eta]="eta"
-        [miningStats]="miningStats"
-        [scrollEvent]="scrollIntoAccelPreview"
-        [showDetails]="showAccelerationDetails"
-        [noCTA]="true"
-        (hasDetails)="setHasAccelerationDetails($event)"
-        (completed)="onAccelerationCompleted()"
-        (unavailable)="eligibleForAcceleration = false"
-        class="h-100 w-100"
-      ></app-accelerate-checkout>
-    </ng-container>
-
     <br>
 
     <ng-container *ngIf="rbfInfo">
@@ -161,15 +130,6 @@
       </div>
       <div class="clearfix"></div>
       <app-rbf-timeline [txid]="txId" [replacements]="rbfInfo"></app-rbf-timeline>
-      <br>
-    </ng-container>
-
-    <ng-container *ngIf="transactionTime && isAcceleration">
-      <div class="title float-left">
-        <h2 id="acceleration-timeline" i18n="transaction.acceleration-timeline|Acceleration Timeline">Acceleration Timeline</h2>
-      </div>
-      <div class="clearfix"></div>
-      <app-acceleration-timeline [transactionTime]="transactionTime" [tx]="tx" [accelerationInfo]="accelerationInfo" [eta]="(ETA$ | async)" [standardETA]="(standardETA$ | async)?.time"></app-acceleration-timeline>
       <br>
     </ng-container>
 
@@ -436,9 +396,7 @@
 <ng-template #detailsRight>
   <ng-container *ngTemplateOutlet="feeRow"></ng-container>
   <ng-container *ngTemplateOutlet="feeRateRow"></ng-container>
-  @if (!isLoadingTx && !tx?.status?.confirmed && isAcceleration && ((cpfpInfo && hasEffectiveFeeRate) || accelerationInfo)) {
-    <ng-container *ngTemplateOutlet="acceleratingRow"></ng-container>
-  } @else {
+  @if (!isLoadingTx && !tx?.status?.confirmed) {
     <ng-container *ngTemplateOutlet="effectiveRateRow"></ng-container>
   }
   @if (tx?.status?.confirmed) {
@@ -492,19 +450,17 @@
 </ng-template>
 
 <ng-template #featuresRow>
-  @if (network !== 'liquid' && network !== 'liquidtestnet') {
-    @if (!isLoadingTx) {
-      @if (featuresEnabled) {
-        <tr>
-          <td class="td-width" i18n="transaction.features|Transaction features" id="acceleratePreviewAnchor">Features</td>
-          <td>
-            <app-tx-features [tx]="tx"></app-tx-features>
-          </td>
-        </tr>
-      }
-    } @else {
-      <ng-container *ngTemplateOutlet="skeletonDetailsRow"></ng-container>
+  @if (!isLoadingTx) {
+    @if (featuresEnabled) {
+      <tr>
+        <td class="td-width" i18n="transaction.features|Transaction features">Features</td>
+        <td>
+          <app-tx-features [tx]="tx"></app-tx-features>
+        </td>
+      </tr>
     }
+  } @else {
+    <ng-container *ngTemplateOutlet="skeletonDetailsRow"></ng-container>
   }
 </ng-template>
 
@@ -551,25 +507,11 @@
         <td class="td-width align-items-center align-middle" i18n="transaction.eta|Transaction ETA">ETA</td>
         <td>
           <ng-container *ngIf="(ETA$ | async) as eta; else etaSkeleton">
-            @if (eta.blocks >= 7) {
-              <span [class]="(!tx?.acceleration && acceleratorAvailable && accelerateCtaType === 'button' && !showAccelerationSummary && eligibleForAcceleration) ? 'etaDeepMempool justify-content-end align-items-center' : ''">
-                <span i18n="transaction.eta.not-any-time-soon|Transaction ETA mot any time soon">Not any time soon</span>
-                @if (!tx?.acceleration && acceleratorAvailable && accelerateCtaType === 'button' && !showAccelerationSummary && eligibleForAcceleration) {
-                  <a class="btn btn-sm accelerateDeepMempool btn-small-height float-right" i18n="transaction.accelerate|Accelerate button label" (click)="onAccelerateClicked()">Accelerate</a>
-                }
-              </span>
-            } @else if (network === 'liquid' || network === 'liquidtestnet') {
+            <span>
               <app-time kind="until" [time]="eta.time" [fastRender]="false" [fixedRender]="true"></app-time>
-            } @else {
-              <span [class]="(!tx?.acceleration && acceleratorAvailable && accelerateCtaType === 'button' && !showAccelerationSummary && eligibleForAcceleration) ? 'etaDeepMempool justify-content-end align-items-center' : ''">
-                <app-time kind="until" [time]="eta.time" [fastRender]="false" [fixedRender]="true"></app-time>
-                @if (!tx?.acceleration && acceleratorAvailable && accelerateCtaType === 'button' && !showAccelerationSummary && eligibleForAcceleration) {
-                  <a class="btn btn-sm accelerateDeepMempool btn-small-height float-right" i18n="transaction.accelerate|Accelerate button label" (click)="onAccelerateClicked()">Accelerate</a>
-                }
-              </span>
-              <span class="eta justify-content-end">
-              </span>
-            }
+            </span>
+            <span class="eta justify-content-end">
+            </span>
           </ng-container>
           <ng-template #etaSkeleton>
             <span class="skeleton-loader"></span>
@@ -584,15 +526,12 @@
 
 <ng-template #gogglesRow>
   @if (!isLoadingTx) {
-    @if (isAcceleration || filters.length) {
+    @if (filters.length) {
       <tr>
         <td class="td-width">
           <span class="goggles-icon"><app-svg-images name="goggles" width="100%" height="100%"></app-svg-images></span>
         </td>
         <td class="wrap-cell">
-          @if (isAcceleration) {
-            <span class="badge badge-accelerated mr-1" i18n="transaction.audit.accelerated">Accelerated</span>
-          }
           <ng-container *ngFor="let filter of filters;">
             <span class="badge badge-primary filter-tag mr-1">{{ filter.label }}</span>
           </ng-container>
@@ -607,10 +546,7 @@
     <tr>
       <td class="td-width" i18n="transaction.fee|Transaction fee">Fee</td>
       <td class="text-wrap">{{ tx.fee | number }} <span class="symbol" i18n="shared.sat|sat">sat</span>
-        @if (accelerationInfo?.bidBoost ?? tx.feeDelta > 0) {
-          <span class="oobFees" i18n-ngbTooltip="Acceleration Fees" ngbTooltip="Acceleration fees paid out-of-band"> +{{ accelerationInfo?.bidBoost ?? tx.feeDelta | number }} </span><span class="symbol" i18n="shared.sat|sat">sat</span>
-        }
-        <span class="fiat"><app-fiat [blockConversion]="tx.price" [value]="tx.fee + ((accelerationInfo?.bidBoost ?? tx.feeDelta) || 0)"></app-fiat></span>
+        <span class="fiat"><app-fiat [blockConversion]="tx.price" [value]="tx.fee + (tx.feeDelta || 0)"></app-fiat></span>
       </td>
     </tr>
   } @else {
@@ -624,7 +560,7 @@
       <td i18n="transaction.fee-rate|Transaction fee rate">Fee rate</td>
       <td>
         <app-fee-rate [fee]="tx.feePerVsize"></app-fee-rate>
-        @if (tx?.status?.confirmed && tx.fee && !hasEffectiveFeeRate && !accelerationInfo) {
+        @if (tx?.status?.confirmed && tx.fee && !hasEffectiveFeeRate) {
           &nbsp;
           <app-tx-fee-rating [tx]="tx"></app-tx-fee-rating>
         }
@@ -637,22 +573,14 @@
 
 <ng-template #effectiveRateRow>
   @if (!isLoadingTx) {
-    @if ((cpfpInfo && hasEffectiveFeeRate) || accelerationInfo) {
+    @if ((cpfpInfo && hasEffectiveFeeRate)) {
       <tr>
-        @if (isAcceleration) {
-          <td i18n="transaction.accelerated-fee-rate|Accelerated transaction fee rate">Accelerated fee rate</td>
-        } @else {
-          <td i18n="transaction.effective-fee-rate|Effective transaction fee rate">Effective fee rate</td>
-        }
+        <td i18n="transaction.effective-fee-rate|Effective transaction fee rate">Effective fee rate</td>
         <td>
           <div class="effective-fee-container">
-            @if (accelerationInfo?.acceleratedFeeRate && (!tx.effectiveFeePerVsize || accelerationInfo.acceleratedFeeRate >= tx.effectiveFeePerVsize || tx.acceleration)) {
-              <app-fee-rate [class.oobFees]="isAcceleration" [fee]="accelerationInfo.acceleratedFeeRate"></app-fee-rate>
-            } @else {
-              <app-fee-rate [class.oobFees]="isAcceleration" [fee]="tx.effectiveFeePerVsize"></app-fee-rate>
-            }
+            <app-fee-rate [class.oobFees]="false" [fee]="tx.effectiveFeePerVsize"></app-fee-rate>
 
-            @if (tx?.status?.confirmed && !tx.acceleration && !accelerationInfo && tx.fee && tx.effectiveFeePerVsize) {
+            @if (tx?.status?.confirmed && tx.fee && tx.effectiveFeePerVsize) {
               <app-tx-fee-rating class="ml-2 mr-2 effective-fee-rating" [tx]="tx"></app-tx-fee-rating>
             }
           </div>
@@ -665,15 +593,6 @@
   } @else {
     <ng-container *ngTemplateOutlet="skeletonDetailsRow"></ng-container>
   }
-</ng-template>
-
-<ng-template #acceleratingRow>
-  <tr>
-    <td rowspan="2" colspan="2" style="padding: 0;">
-      <app-active-acceleration-box [tx]="tx" [accelerationInfo]="accelerationInfo" [miningStats]="miningStats" [hasCpfp]="hasCpfp" (toggleCpfp)="showCpfpDetails = !showCpfpDetails" [chartPositionLeft]="isMobile"></app-active-acceleration-box>
-    </td>
-  </tr>
-  <tr></tr>
 </ng-template>
 
 <ng-template #minerRow>

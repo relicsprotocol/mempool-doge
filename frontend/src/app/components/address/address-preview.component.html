@@ -20,16 +20,16 @@
           <ng-template [ngIf]="!address.electrum">
             <tr>
               <td i18n="address.total-received">Total received</td>
-              <td *ngIf="address.chain_stats.funded_txo_sum !== undefined; else confidentialTd"><app-amount [satoshis]="received" [noFiat]="true"></app-amount></td>
+              <td *ngIf="address.chain_stats.funded_txo_sum !== undefined; else confidentialTd"><app-amount [shibes]="received" [noFiat]="true"></app-amount></td>
             </tr>
             <tr>
               <td i18n="address.total-sent">Total sent</td>
-              <td *ngIf="address.chain_stats.spent_txo_sum !== undefined; else confidentialTd"><app-amount [satoshis]="sent" [noFiat]="true"></app-amount></td>
+              <td *ngIf="address.chain_stats.spent_txo_sum !== undefined; else confidentialTd"><app-amount [shibes]="sent" [noFiat]="true"></app-amount></td>
             </tr>
           </ng-template>
           <tr>
             <td i18n="address.balance">Balance</td>
-            <td *ngIf="address.chain_stats.funded_txo_sum !== undefined; else confidentialTd"><app-amount [satoshis]="received - sent" [noFiat]="true"></app-amount></td>
+            <td *ngIf="address.chain_stats.funded_txo_sum !== undefined; else confidentialTd"><app-amount [shibes]="received - sent" [noFiat]="true"></app-amount></td>
           </tr>
           <tr>
             <td i18n="address.transactions">Transactions</td>

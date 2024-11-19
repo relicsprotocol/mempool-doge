@@ -12,7 +12,6 @@ import { BlocksList } from './components/blocks-list/blocks-list.component';
 import { RbfList } from './components/rbf-list/rbf-list.component';
 import { ServerHealthComponent } from './components/server-health/server-health.component';
 import { ServerStatusComponent } from './components/server-health/server-status.component';
-import { FaucetComponent } from './components/faucet/faucet.component'
 
 const browserWindow = window || {};
 // @ts-ignore
@@ -39,10 +38,6 @@ const routes: Routes = [
       {
         path: 'tx/test',
         component: TestTransactionsComponent,
-      },
-      {
-        path: 'about',
-        loadChildren: () => import('./components/about/about.module').then(m => m.AboutModule),
       },
       {
         path: 'blocks/:page',
@@ -90,11 +85,6 @@ const routes: Routes = [
         loadChildren: () => import('./docs/docs.module').then(m => m.DocsModule)
       },
       {
-        path: 'lightning',
-        loadChildren: () => import('./lightning/lightning.module').then(m => m.LightningModule),
-        data: { preload: browserWindowEnv && browserWindowEnv.LIGHTNING === true, networks: ['bitcoin'] },
-      },
-      {
         path: 'tools/calculator',
         component: CalculatorComponent
       },
@@ -105,29 +95,14 @@ const routes: Routes = [
 if (window['__env']?.OFFICIAL_MEMPOOL_SPACE) {
   routes[0].children.push({
     path: 'monitoring',
-    data: { networks: ['bitcoin', 'liquid'] },
+    data: { networks: ['dogecoin'] },
     component: ServerHealthComponent
   });
   routes[0].children.push({
     path: 'nodes',
-    data: { networks: ['bitcoin', 'liquid'] },
+    data: { networks: ['dogecoin'] },
     component: ServerStatusComponent
   });
-  if (window['isMempoolSpaceBuild']) {
-    routes[0].children.push({
-      path: 'faucet',
-      canActivate: [(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
-        return state.url.startsWith('/testnet4/');
-      }],
-      component: StartComponent,
-      data: { preload: true, networkSpecific: true },
-      children: [{
-        path: '',
-        data: { networks: ['bitcoin'] },
-        component: FaucetComponent,
-      }]
-    })
-  }
 }
 
 @NgModule({

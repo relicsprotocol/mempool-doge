@@ -17,7 +17,6 @@ import { ApiService } from '../../services/api.service';
 import { SeoService } from '../../services/seo.service';
 import { seoDescriptionNetwork } from '../../shared/common.utils';
 import { CpfpInfo } from '../../interfaces/node-api.interface';
-import { LiquidUnblinding } from './liquid-ublinding';
 
 @Component({
   selector: 'app-transaction-preview',
@@ -37,8 +36,6 @@ export class TransactionPreviewComponent implements OnInit, OnDestroy {
   cpfpInfo: CpfpInfo | null;
   showCpfpDetails = false;
   fetchCpfp$ = new Subject<string>();
-  liquidUnblinding = new LiquidUnblinding();
-  isLiquid = false;
   totalValue: number;
   opReturns: Vout[];
   extraData: 'none' | 'coinbase' | 'opreturn';
@@ -57,9 +54,6 @@ export class TransactionPreviewComponent implements OnInit, OnDestroy {
     this.stateService.networkChanged$.subscribe(
       (network) => {
         this.network = network;
-        if (this.network === 'liquid' || this.network == 'liquidtestnet') {
-          this.isLiquid = true;
-        }
       }
     );
 
@@ -123,15 +117,6 @@ export class TransactionPreviewComponent implements OnInit, OnDestroy {
           );
         }),
         switchMap((tx) => {
-          if (this.network === 'liquid' || this.network === 'liquidtestnet') {
-            return from(this.liquidUnblinding.checkUnblindedTx(tx))
-              .pipe(
-                catchError((error) => {
-                  this.errorUnblinded = error;
-                  return of(tx);
-                })
-              );
-          }
           return of(tx);
         })
       )

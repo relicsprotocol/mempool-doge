@@ -103,7 +103,7 @@ export class BlockPreviewComponent implements OnInit, OnDestroy {
         if( this.stateService.network === 'liquid' || this.stateService.network === 'liquidtestnet' ) {
           this.seoService.setDescription($localize`:@@meta.description.liquid.block:See size, weight, fee range, included transactions, and more for Liquid${seoDescriptionNetwork(this.stateService.network)} block ${block.height}:BLOCK_HEIGHT: (${block.id}:BLOCK_ID:).`);
         } else {
-          this.seoService.setDescription($localize`:@@meta.description.bitcoin.block:See size, weight, fee range, included transactions, audit (expected v actual), and more for Bitcoin${seoDescriptionNetwork(this.stateService.network)} block ${block.height}:BLOCK_HEIGHT: (${block.id}:BLOCK_ID:).`);
+          this.seoService.setDescription($localize`:@@meta.description.dogecoin.block:See size, weight, fee range, included transactions, audit (expected v actual), and more for Bitcoin${seoDescriptionNetwork(this.stateService.network)} block ${block.height}:BLOCK_HEIGHT: (${block.id}:BLOCK_ID:).`);
         }
         this.isLoadingBlock = false;
         this.setBlockSubsidy();
@@ -136,28 +136,13 @@ export class BlockPreviewComponent implements OnInit, OnDestroy {
                   return of(transactions);
                 })
               ),
-            this.stateService.env.ACCELERATOR === true && block.height > 819500
-              ? this.servicesApiService.getAccelerationHistory$({ blockHeight: block.height })
-                .pipe(catchError(() => {
-                  return of([]);
-                }))
-              : of([])
+            of([])
           ]);
         }
       ),
     )
-    .subscribe(([transactions, accelerations]) => {
+    .subscribe(([transactions]) => {
       this.strippedTransactions = transactions;
-
-      const acceleratedInBlock = {};
-      for (const acc of accelerations) {
-        acceleratedInBlock[acc.txid] = acc;
-      }
-      for (const tx of transactions) {
-        if (acceleratedInBlock[tx.txid]) {
-          tx.acc = true;
-        }
-      }
 
       this.isLoadingOverview = false;
       if (this.blockGraph) {

@@ -34,10 +34,6 @@ class Audit {
     const now = Math.round((Date.now() / 1000));
     for (const tx of transactions) {
       inBlock[tx.txid] = tx;
-      if (mempool[tx.txid] && mempool[tx.txid].acceleration) {
-        accelerated.push(tx.txid);
-        isAccelerated[tx.txid] = true;
-      }
     }
     // coinbase is always expected
     if (transactions[0]) {

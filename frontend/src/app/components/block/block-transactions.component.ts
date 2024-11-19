@@ -51,13 +51,6 @@ export class BlockTransactionsComponent implements OnInit {
             return of([]);
         }))
       ),
-      tap((transactions: Transaction[]) => {
-        // The block API doesn't contain the block rewards on Liquid
-        if (this.stateService.isLiquid() && transactions && transactions[0] && transactions[0].vin[0].is_coinbase) {
-          const blockReward = transactions[0].vout.reduce((acc: number, curr: Vout) => acc + curr.value, 0) / 100000000;
-          this.blockReward.emit(blockReward);
-        }
-      })
     );
 
     this.txsLoadingStatus$ = this.route.paramMap

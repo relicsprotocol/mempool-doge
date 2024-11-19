@@ -60,11 +60,6 @@
 	top: -1px;
 }
 
-.badge.badge-accelerated {
-  background-color: var(--tertiary);
-  color: white;
-}
-
 .btn-small-height {
 	line-height: 1;
 }
@@ -194,7 +189,7 @@
 	}
 }
 
-.details-button, .flow-toggle, .accelerator-toggle {
+.details-button, .flow-toggle {
   margin-top: -5px;
   margin-left: 10px;
 	@media (min-width: 768px){
@@ -204,7 +199,7 @@
 	}
 }
 
-.accelerator-toggle, .details-button {
+.details-button {
   position: relative;
   bottom: -13px;
 }
@@ -266,33 +261,12 @@
   }
 }
 
-.blink-bg {
-  color: var(--fg);
-  background: repeating-linear-gradient(#daad0a 0%, #daad0a 5%, #987805 100%) !important;
-  animation: shadowyBackground 1s infinite;
-  box-shadow: 0px 0px 20px rgba(#eba814, 1);
-  transition: 100ms all ease-in;
-  margin-right: 8px;
-  font-size: 16px;
-  border: 1px solid gold;
-}
-
 .eta {
   display: flex;
   flex-wrap: wrap;
   align-content: center;
   @media (min-width: 850px) {
-    justify-content: left !important;    
-  }
-}
-
-.accelerate {
-  display: flex !important;
-  align-self: auto;
-  margin-left: auto;
-  background-color: var(--tertiary);
-  @media (max-width: 849px) {
-    margin-left: 5px;
+    justify-content: left !important;
   }
 }
 
@@ -305,18 +279,6 @@
   }
   @media (max-width: 849px) {
     justify-content: right !important;
-  }
-}
-
-.accelerateDeepMempool {
-  align-self: auto;
-  margin-left: auto;
-  background-color: var(--tertiary);
-  @media (max-width: 995px) {
-    margin-left: 0px;
-  }
-  @media (max-width: 849px) {
-    margin-left: 5px;
   }
 }
 

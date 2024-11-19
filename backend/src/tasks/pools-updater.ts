@@ -68,6 +68,19 @@ class PoolsUpdater {
       if (poolsJson === undefined) {
         return;
       }
+      const poolsJsonTmp = [
+        {
+          "id": 1,
+          "name": "BlockFills",
+          "addresses": [
+            "1PzVut5X6Nx7Mv4JHHKPtVM9Jr9LJ4Rbry"
+          ],
+          "tags": [
+            "/BlockfillsPool/"
+          ],
+          "link": "https://www.blockfills.com/mining"
+        },
+      ];
       poolsParser.setMiningPools(poolsJson);
 
       if (config.DATABASE.ENABLED === false) { // Don't run db operations

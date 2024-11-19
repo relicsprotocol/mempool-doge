@@ -6,15 +6,10 @@ import { catchError, distinctUntilChanged, filter, map, share, switchMap, tap } 
 import { BlockExtended, PoolStat } from '../../interfaces/node-api.interface';
 import { ApiService } from '../../services/api.service';
 import { StateService } from '../../services/state.service';
-import { selectPowerOfTen } from '../../bitcoin.utils';
+import { selectPowerOfTen } from '../../dogecoin.utils';
 import { formatNumber } from '@angular/common';
 import { SeoService } from '../../services/seo.service';
 import { HttpErrorResponse } from '@angular/common/http';
-
-interface AccelerationTotal {
-  cost: number,
-  count: number,
-}
 
 @Component({
   selector: 'app-pool',
@@ -32,7 +27,6 @@ export class PoolComponent implements OnInit {
   slugSubscription: Subscription;
   poolStats$: Observable<PoolStat>;
   blocks$: Observable<BlockExtended[]>;
-  oobFees$: Observable<AccelerationTotal[]>;
   isLoading = true;
   error: HttpErrorResponse | null = null;
 
@@ -62,7 +56,7 @@ export class PoolComponent implements OnInit {
     this.slugSubscription = this.route.params.pipe(map((params) => params.slug)).subscribe((slug) => {
       this.isLoading = true;
       this.blocks = [];
-      this.chartOptions = {};  
+      this.chartOptions = {};
       this.slug = slug;
       this.initializeObservables();
     });
@@ -117,18 +111,6 @@ export class PoolComponent implements OnInit {
         map(() => this.blocks),
         share(),
       );
-
-    this.oobFees$ = this.route.params.pipe(map((params) => params.slug)).pipe(
-      filter(() => this.stateService.env.PUBLIC_ACCELERATIONS === true && this.stateService.network === ''),
-      switchMap(slug => {
-        return combineLatest([
-          this.apiService.getAccelerationTotals$(this.slug, '1w'),
-          this.apiService.getAccelerationTotals$(this.slug, '1m'),
-          this.apiService.getAccelerationTotals$(this.slug),
-        ]);
-      }),
-      filter(oob => oob.length === 3 && oob[2].count > 0)
-    );
   }
 
   prepareChartOptions(hashrate, share) {
@@ -188,9 +170,9 @@ export class PoolComponent implements OnInit {
               hashrateString = `${tick.marker} ${tick.seriesName}: ${formatNumber(hashrateData, this.locale, '1.0-0')} ${hashratePowerOfTen.unit}H/s<br>`;
             } else if (tick.seriesIndex === 1) {
               dominanceString = `${tick.marker} ${tick.seriesName}: ${formatNumber(tick.data[1], this.locale, '1.0-2')}%`;
-            }             
+            }
           }
-          
+
           return `
             <b style="color: white; margin-left: 18px">${ticks[0].axisValueLabel}</b><br>
             <span>${hashrateString}</span>

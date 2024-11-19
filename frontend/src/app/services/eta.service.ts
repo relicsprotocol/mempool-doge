@@ -1,11 +1,10 @@
 import { Injectable } from '@angular/core';
-import { AccelerationPosition, CpfpInfo, DifficultyAdjustment, MempoolPosition, SinglePoolStats } from '../interfaces/node-api.interface';
+import { CpfpInfo, DifficultyAdjustment, MempoolPosition, SinglePoolStats } from '../interfaces/node-api.interface';
 import { StateService } from './state.service';
 import { MempoolBlock } from '../interfaces/websocket.interface';
 import { Transaction } from '../interfaces/electrs.interface';
 import { MiningService, MiningStats } from './mining.service';
-import { getUnacceleratedFeeRate } from '../shared/transaction.utils';
-import { AccelerationEstimate } from '../components/accelerate-checkout/accelerate-checkout.component';
+import { getFeeRate } from '../shared/transaction.utils';
 import { Observable, combineLatest, map, of, share, shareReplay, tap } from 'rxjs';
 
 export interface ETA {
@@ -23,48 +22,6 @@ export class EtaService {
     private stateService: StateService,
     private miningService: MiningService,
   ) { }
-
-  getProjectedEtaObservable(estimate: AccelerationEstimate, miningStats?: MiningStats): Observable<{ hashratePercentage: number, ETA: number, acceleratedETA: number }> {
-    return combineLatest([
-      this.stateService.mempoolTxPosition$.pipe(map(p => p?.position)),
-      this.stateService.difficultyAdjustment$,
-      miningStats ? of(miningStats) : this.miningService.getMiningStats('1w'),
-    ]).pipe(
-      map(([mempoolPosition, da, miningStats]) => {
-        if (!mempoolPosition || !estimate?.pools?.length || !miningStats || !da) {
-          return {
-            hashratePercentage: undefined,
-            ETA: undefined,
-            acceleratedETA: undefined,
-          };
-        }
-        const pools: { [id: number]: SinglePoolStats } = {};
-        for (const pool of miningStats.pools) {
-          pools[pool.poolUniqueId] = pool;
-        }
-
-        let totalAcceleratedHashrate = 0;
-        for (const poolId of estimate.pools) {
-          const pool = pools[poolId];
-          if (!pool) {
-            continue;
-          }
-          totalAcceleratedHashrate += pool.lastEstimatedHashrate;
-        }
-        const acceleratingHashrateFraction = (totalAcceleratedHashrate / miningStats.lastEstimatedHashrate);
-
-        return {
-          hashratePercentage: acceleratingHashrateFraction * 100,
-          ETA: Date.now() + da.timeAvg * mempoolPosition.block,
-          acceleratedETA: this.calculateETAFromShares([
-            { block: mempoolPosition.block, hashrateShare: (1 - acceleratingHashrateFraction) },
-            { block: 0, hashrateShare: acceleratingHashrateFraction },
-          ], da).time,
-        };
-      }),
-      shareReplay()
-    );
-  }
 
   mempoolPositionFromFees(feerate: number, mempoolBlocks: MempoolBlock[]): MempoolPosition {
     for (let txInBlockIndex = 0; txInBlockIndex < mempoolBlocks.length; txInBlockIndex++) {
@@ -108,11 +65,9 @@ export class EtaService {
     network: string,
     tx: Transaction,
     mempoolBlocks: MempoolBlock[],
-    position: { txid: string, position: MempoolPosition, cpfp: CpfpInfo | null, accelerationPositions?: AccelerationPosition[] },
+    position: { txid: string, position: MempoolPosition, cpfp: CpfpInfo | null },
     da: DifficultyAdjustment,
     miningStats: MiningStats,
-    isAccelerated: boolean,
-    accelerationPositions: AccelerationPosition[],
   ): ETA | null {
     // return this.calculateETA(tx, this.accelerationPositions, position, mempoolBlocks, da, isAccelerated)
     if (!tx || !mempoolBlocks) {
@@ -141,44 +96,14 @@ export class EtaService {
       return null;
     }
 
-    if (!isAccelerated) {
-      const blocks = mempoolPosition.block + 1;
-      const wait = da.adjustedTimeAvg * (mempoolPosition.block + 1);
-      return {
-        now,
-        time: wait + now + da.timeOffset,
-        wait,
-        blocks,
-      };
-    } else {
-      // accelerated transactions
-
-      // mining stats are required for pool hashrate weightings
-      if (!miningStats) {
-        return null;
-      }
-      // acceleration positions are required
-      if (!accelerationPositions) {
-        return null;
-      }
-      const pools: { [id: number]: SinglePoolStats } = {};
-      for (const pool of miningStats.pools) {
-        pools[pool.poolUniqueId] = pool;
-      }
-      const unacceleratedPosition = this.mempoolPositionFromFees(getUnacceleratedFeeRate(tx, true), mempoolBlocks);
-      const totalAcceleratedHashrate = accelerationPositions.reduce((total, pos) => total + (pools[pos.poolId].lastEstimatedHashrate), 0);
-      const shares = [
-        {
-          block: unacceleratedPosition.block,
-          hashrateShare: (1 - (totalAcceleratedHashrate / miningStats.lastEstimatedHashrate)),
-        },
-        ...accelerationPositions.map(pos => ({
-          block: pos.block,
-          hashrateShare: ((pools[pos.poolId].lastEstimatedHashrate) / miningStats.lastEstimatedHashrate)
-        }))
-      ];
-      return this.calculateETAFromShares(shares, da);
-    }
+    const blocks = mempoolPosition.block + 1;
+    const wait = da.adjustedTimeAvg * (mempoolPosition.block + 1);
+    return {
+      now,
+      time: wait + now + da.timeOffset,
+      wait,
+      blocks,
+    };
   }
 
   /**
@@ -225,39 +150,6 @@ export class EtaService {
         blocks: Math.ceil(eta / da.adjustedTimeAvg),
       };
   }
-
-  calculateUnacceleratedETA(
-    tx: Transaction,
-    mempoolBlocks: MempoolBlock[],
-    da: DifficultyAdjustment,
-    cpfpInfo: CpfpInfo | null,
-  ): ETA | null {
-    if (!tx || !mempoolBlocks) {
-      return null;
-    }
-    const now = Date.now();
-
-    // use known projected position, or fall back to feerate-based estimate
-    const mempoolPosition = this.mempoolPositionFromFees(this.getFeeRateFromCpfpInfo(tx, cpfpInfo), mempoolBlocks);
-    if (!mempoolPosition) {
-      return null;
-    }
-
-    // difficulty adjustment estimate is required to know avg block time on non-Liquid networks
-    if (!da) {
-      return null;
-    }
-
-    const blocks = mempoolPosition.block + 1;
-    const wait = da.adjustedTimeAvg * (mempoolPosition.block + 1);
-    return {
-      now,
-      time: wait + now + da.timeOffset,
-      wait,
-      blocks,
-    };
-  }
-
 
   getFeeRateFromCpfpInfo(tx: Transaction, cpfpInfo: CpfpInfo | null): number {
     if (!cpfpInfo) {

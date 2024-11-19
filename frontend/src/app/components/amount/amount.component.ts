@@ -12,18 +12,18 @@ import { Price } from '../../services/price.service';
 export class AmountComponent implements OnInit, OnDestroy {
   conversions$: Observable<any>;
   currency: string;
-  viewAmountMode$: Observable<'btc' | 'sats' | 'fiat'>;
+  viewAmountMode$: Observable<'doge' | 'shibes' | 'fiat'>;
   network = '';
 
   stateSubscription: Subscription;
   currencySubscription: Subscription;
 
-  @Input() satoshis: number;
+  @Input() shibes: number;
   @Input() digitsInfo = '1.8-8';
   @Input() noFiat = false;
   @Input() addPlus = false;
   @Input() blockConversion: Price;
-  @Input() forceBtc: boolean = false;
+  @Input() forceDoge: boolean = false;
   @Input() ignoreViewMode: boolean = false;
   @Input() forceBlockConversion: boolean = false; // true = displays fiat price as 0 if blockConversion is undefined instead of falling back to conversions
 

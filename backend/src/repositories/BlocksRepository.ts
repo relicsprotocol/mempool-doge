@@ -193,9 +193,9 @@ class BlocksRepository {
 
   /**
    * Save newly indexed data from core coinstatsindex
-   * 
-   * @param utxoSetSize 
-   * @param totalInputAmt 
+   *
+   * @param utxoSetSize
+   * @param totalInputAmt
    */
   public async $updateCoinStatsIndexData(blockHash: string, utxoSetSize: number,
     totalInputAmt: number
@@ -221,9 +221,9 @@ class BlocksRepository {
   /**
    * Update missing fee amounts fields
    *
-   * @param blockHash 
-   * @param feeAmtPercentiles 
-   * @param medianFeeAmt 
+   * @param blockHash
+   * @param feeAmtPercentiles
+   * @param medianFeeAmt
    */
   public async $updateFeeAmounts(blockHash: string, feeAmtPercentiles, medianFeeAmt) : Promise<void> {
     try {
@@ -818,39 +818,6 @@ class BlocksRepository {
   }
 
   /**
-   * Get a list of blocks that have not had CPFP data indexed
-   */
-   public async $getCPFPUnindexedBlocks(): Promise<number[]> {
-    try {
-      const blockchainInfo = await bitcoinClient.getBlockchainInfo();
-      const currentBlockHeight = blockchainInfo.blocks;
-      let indexingBlockAmount = Math.min(config.MEMPOOL.INDEXING_BLOCKS_AMOUNT, currentBlockHeight);
-      if (indexingBlockAmount <= -1) {
-        indexingBlockAmount = currentBlockHeight + 1;
-      }
-      const minHeight = Math.max(0, currentBlockHeight - indexingBlockAmount + 1);
-
-      const [rows] = await DB.query(`
-        SELECT height
-        FROM compact_cpfp_clusters
-        WHERE height <= ? AND height >= ?
-        GROUP BY height
-        ORDER BY height DESC;
-      `, [currentBlockHeight, minHeight]) as RowDataPacket[][];
-
-      const indexedHeights = {};
-      rows.forEach((row) => { indexedHeights[row.height] = true; });
-      const allHeights: number[] = Array.from(Array(currentBlockHeight - minHeight + 1).keys(), n => n + minHeight).reverse();
-      const unindexedHeights = allHeights.filter(x => !indexedHeights[x]);
-
-      return unindexedHeights;
-    } catch (e) {
-      logger.err('Cannot fetch CPFP unindexed blocks. Reason: ' + (e instanceof Error ? e.message : e));
-      throw e;
-    }
-  }
-
-  /**
    * Return the oldest block  from a consecutive chain of block from the most recent one
    */
   public async $getOldestConsecutiveBlock(): Promise<any> {
@@ -946,9 +913,9 @@ class BlocksRepository {
 
   /**
    * Save indexed median fee to avoid recomputing it later
-   * 
-   * @param id 
-   * @param feePercentiles 
+   *
+   * @param id
+   * @param feePercentiles
    */
   public async $saveFeePercentilesForBlockId(id: string, feePercentiles: number[]): Promise<void> {
     try {
@@ -965,9 +932,9 @@ class BlocksRepository {
 
   /**
    * Save indexed effective fee statistics
-   * 
-   * @param id 
-   * @param feeStats 
+   *
+   * @param id
+   * @param feeStats
    */
   public async $saveEffectiveFeeStats(id: string, feeStats: EffectiveFeeStats): Promise<void> {
     try {
@@ -984,7 +951,7 @@ class BlocksRepository {
 
   /**
    * Save coinbase addresses
-   * 
+   *
    * @param id
    * @param addresses
    */
@@ -1003,7 +970,7 @@ class BlocksRepository {
 
   /**
    * Save pool
-   * 
+   *
    * @param id
    * @param poolId
    */
@@ -1023,8 +990,8 @@ class BlocksRepository {
   /**
    * Convert a mysql row block into a BlockExtended. Note that you
    * must provide the correct field into dbBlk object param
-   * 
-   * @param dbBlk 
+   *
+   * @param dbBlk
    */
   private async formatDbBlockIntoExtendedBlock(dbBlk: DatabaseBlock): Promise<BlockExtended> {
     const blk: Partial<BlockExtended> = {};
@@ -1044,7 +1011,7 @@ class BlocksRepository {
     blk.weight = dbBlk.weight;
     blk.previousblockhash = dbBlk.previousblockhash;
     blk.mediantime = dbBlk.mediantime;
-    
+
     // BlockExtension
     extras.totalFees = dbBlk.totalFees;
     extras.medianFee = dbBlk.medianFee;

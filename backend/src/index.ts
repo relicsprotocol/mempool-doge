@@ -43,7 +43,6 @@ import redisCache from './api/redis-cache';
 import accelerationApi from './api/services/acceleration';
 import bitcoinCoreRoutes from './api/bitcoin/bitcoin-core.routes';
 import bitcoinSecondClient from './api/bitcoin/bitcoin-second-client';
-import accelerationRoutes from './api/acceleration/acceleration.routes';
 import aboutRoutes from './api/about.routes';
 import mempoolBlocks from './api/mempool-blocks';
 
@@ -311,7 +310,7 @@ class Server {
     }
     loadingIndicators.setProgressChangedCallback(websocketHandler.handleLoadingChanged.bind(websocketHandler));
   }
-  
+
   setUpHttpApiRoutes(): void {
     bitcoinRoutes.initRoutes(this.app);
     bitcoinCoreRoutes.initRoutes(this.app);
@@ -321,20 +320,6 @@ class Server {
     }
     if (Common.indexingEnabled() && config.MEMPOOL.ENABLED) {
       miningRoutes.initRoutes(this.app);
-    }
-    if (Common.isLiquid()) {
-      liquidRoutes.initRoutes(this.app);
-    }
-    if (config.LIGHTNING.ENABLED) {
-      generalLightningRoutes.initRoutes(this.app);
-      nodesRoutes.initRoutes(this.app);
-      channelsRoutes.initRoutes(this.app);
-    }
-    if (config.MEMPOOL_SERVICES.ACCELERATIONS) {
-      accelerationRoutes.initRoutes(this.app);
-    }
-    if (!config.MEMPOOL.OFFICIAL) {
-      aboutRoutes.initRoutes(this.app);
     }
   }
 

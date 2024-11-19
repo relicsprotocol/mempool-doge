@@ -36,7 +36,7 @@
       </tr>
       <tr>
         <td class="label" i18n="dashboard.latest-transactions.amount">Amount</td>
-        <td class="value"><app-amount [blockConversion]="blockConversion" [satoshis]="value" [noFiat]="true"></app-amount></td>
+        <td class="value"><app-amount [blockConversion]="blockConversion" [shibes]="value" [noFiat]="true"></app-amount></td>
       </tr>
       <tr>
         <td class="label" i18n="transaction.fee|Transaction fee">Fee</td>
@@ -49,11 +49,7 @@
         </td>
       </tr>
       <tr *ngIf="hasEffectiveRate && effectiveRate != null">
-        <td *ngIf="!this.acceleration" class="label" i18n="transaction.effective-fee-rate|Effective transaction fee rate">Effective fee rate</td>
-        <td *ngIf="this.acceleration" class="label" i18n="transaction.accelerated-fee-rate|Accelerated transaction fee rate">Accelerated fee rate</td>
-        <td class="value" [class.oobFees]="this.acceleration">
-          <app-fee-rate [fee]="effectiveRate"></app-fee-rate>
-        </td>
+        <td class="label" i18n="transaction.effective-fee-rate|Effective transaction fee rate">Effective fee rate</td>
       </tr>
       <tr *only-vsize>
         <td class="label" i18n="transaction.vsize|Transaction Virtual Size">Virtual size</td>
@@ -86,15 +82,13 @@
             </ng-container>
             <span *ngSwitchCase="'selected'" class="badge badge-warning" i18n="transaction.audit.marginal">Marginal fee rate</span>
             <span *ngSwitchCase="'rbf'" class="badge badge-warning" i18n="tx-features.tag.conflict|Conflict">Conflict</span>
-            <span *ngSwitchCase="'accelerated'" class="badge badge-accelerated" i18n="transaction.audit.accelerated">Accelerated</span>
           </ng-container>
         </td>
       </tr>
       {{ activeFilters.rbf }}
-      <tr *ngIf="(!auditEnabled && tx && (tx.status === 'accelerated' || tx.acc || acceleration)) || filters.length">
+      <tr *ngIf="filters.length">
         <td colspan="2">
           <div class="tags mt-2" [class.any-mode]="filterMode === 'or'">
-            <span *ngIf="!auditEnabled && tx && (tx.status === 'accelerated' || tx.acc || acceleration)" class="badge badge-accelerated" i18n="transaction.audit.accelerated">Accelerated</span>
             <ng-container *ngFor="let filter of filters;">
               <span class="btn badge filter-tag" [class.matching]="activeFilters[filter.key]">{{ filter.label }}</span>
             </ng-container>

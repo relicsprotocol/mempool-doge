@@ -96,7 +96,7 @@ class Statistics {
       }
     });
 
-    // get minFee and convert to sats/vb
+    // get minFee and convert to shibes/vb
     const minFee = memPool.getMempoolInfo().mempoolminfee * 100000;
 
     try {

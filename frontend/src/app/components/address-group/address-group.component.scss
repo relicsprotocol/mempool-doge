@@ -37,7 +37,7 @@
     &.address {
       width: auto;
     }
-    &.btc {
+    &.doge {
       width: 140px;
       text-align: right;
     }
@@ -68,7 +68,7 @@
 
   @media (min-width: 528px) {
     td, th {
-      &.btc {
+      &.doge {
         width: 160px;
       }
       &.fiat {
@@ -79,7 +79,7 @@
 
   @media (min-width: 576px) {
     td, th {
-      &.btc {
+      &.doge {
         width: 170px;
       }
       &.fiat {
@@ -90,7 +90,7 @@
 
   @media (min-width: 992px) {
     td, th {
-      &.btc {
+      &.doge {
         width: 210px;
       }
       &.fiat {

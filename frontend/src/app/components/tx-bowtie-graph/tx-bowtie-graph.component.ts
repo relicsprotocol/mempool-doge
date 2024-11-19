@@ -6,7 +6,6 @@ import { ReplaySubject, merge, Subscription, of } from 'rxjs';
 import { tap, switchMap } from 'rxjs/operators';
 import { ApiService } from '../../services/api.service';
 import { RelativeUrlPipe } from '../../shared/pipes/relative-url/relative-url.pipe';
-import { AssetsService } from '../../services/assets.service';
 import { environment } from '../../../environments/environment';
 import { ElectrsApiService } from '../../services/electrs-api.service';
 
@@ -35,7 +34,6 @@ interface Xput {
   confidential?: boolean;
   timestamp?: number;
   blockHeight?: number;
-  asset?: string;
 }
 
 @Component({
@@ -69,7 +67,6 @@ export class TxBowtieGraphComponent implements OnInit, OnChanges {
   txWidth: number;
   connectorWidth: number;
   combinedWeight: number;
-  isLiquid: boolean = false;
   hoverLine: Xput | void = null;
   hoverConnector: boolean = false;
   tooltipPosition = { x: 0, y: 0 };
@@ -77,23 +74,12 @@ export class TxBowtieGraphComponent implements OnInit, OnChanges {
   zeroValueWidth = 60;
   zeroValueThickness = 20;
   hasLine: boolean;
-  assetsMinimal: any;
-  nativeAssetId = this.stateService.network === 'liquidtestnet' ? environment.nativeTestAssetId : environment.nativeAssetId;
 
   outspendsSubscription: Subscription;
   refreshOutspends$: ReplaySubject<string> = new ReplaySubject();
 
   gradientColors = {
-    '': ['var(--mainnet-alt)', 'var(--primary)', 'color-mix(in srgb, var(--mainnet-alt) 1%, transparent)'],
-    // liquid: ['#116761', '#183550'],
-    liquid: ['#09a197', '#0f62af', '#09a19700'],
-    // 'liquidtestnet': ['#494a4a', '#272e46'],
-    'liquidtestnet': ['#d2d2d2', '#979797', '#d2d2d200'],
-    // testnet: ['#1d486f', '#183550'],
-    testnet: ['#4edf77', '#10a0af', '#4edf7700'],
-    testnet4: ['#4edf77', '#10a0af', '#4edf7700'],
-    // signet: ['#6f1d5d', '#471850'],
-    signet: ['#d24fc8', '#a84fd2', '#d24fc800'],
+    '': ['#e0cd81', '#543e25', '#09a19700'],
     doge: ['#e0cd81', '#543e25', '#09a19700'],
   };
 
@@ -104,7 +90,6 @@ export class TxBowtieGraphComponent implements OnInit, OnChanges {
     private relativeUrlPipe: RelativeUrlPipe,
     public stateService: StateService,
     private electrsApiService: ElectrsApiService,
-    private assetsService: AssetsService,
     @Inject(LOCALE_ID) private locale: string,
   ) {
     if (this.locale.startsWith('ar') || this.locale.startsWith('fa') || this.locale.startsWith('he')) {
@@ -114,12 +99,6 @@ export class TxBowtieGraphComponent implements OnInit, OnChanges {
 
   ngOnInit(): void {
     this.initGraph();
-
-    if (this.network === 'liquid' || this.network === 'liquidtestnet') {
-      this.assetsService.getAssetsMinimalJson$.subscribe((assets) => {
-        this.assetsMinimal = assets;
-      });
-    }
 
     this.outspendsSubscription = merge(
       this.refreshOutspends$
@@ -161,7 +140,6 @@ export class TxBowtieGraphComponent implements OnInit, OnChanges {
   }
 
   initGraph(): void {
-    this.isLiquid = (this.network === 'liquid' || this.network === 'liquidtestnet');
     this.gradient = this.gradientColors[this.network];
     this.midWidth = Math.min(10, Math.ceil(this.width / 100));
     this.txWidth = this.connectors ? Math.max(this.width - 200, this.width * 0.8) : this.width - 20;
@@ -178,14 +156,12 @@ export class TxBowtieGraphComponent implements OnInit, OnChanges {
         address: v?.scriptpubkey_address || v?.scriptpubkey_type?.toUpperCase(),
         index: i,
         pegout: v?.pegout?.scriptpubkey_address,
-        confidential: (this.isLiquid && v?.value === undefined),
         timestamp: this.tx.status.block_time,
         blockHeight: this.tx.status.block_height,
-        asset: v?.asset,
       } as Xput;
     });
 
-    if (this.tx.fee && !this.isLiquid) {
+    if (this.tx.fee) {
       voutWithFee.unshift({ type: 'fee', value: this.tx.fee });
     }
     const outputCount = voutWithFee.length;
@@ -201,10 +177,8 @@ export class TxBowtieGraphComponent implements OnInit, OnChanges {
         index: i,
         coinbase: v?.is_coinbase,
         pegin: v?.is_pegin,
-        confidential: (this.isLiquid && v?.prevout?.value === undefined),
         timestamp: this.tx.status.block_time,
         blockHeight: this.tx.status.block_height,
-        asset: v?.prevout?.asset,
       } as Xput;
     });
 
@@ -240,27 +214,8 @@ export class TxBowtieGraphComponent implements OnInit, OnChanges {
 
   calcTotalValue(tx: Transaction): number {
     let totalOutput = this.tx.vout.reduce((acc, v) => (this.getOutputValue(v) || 0) + acc, 0);
-    // simple sum of outputs + fee for bitcoin
-    if (!this.isLiquid) {
-      return this.tx.fee ? totalOutput + this.tx.fee : totalOutput;
-    } else {
-      const totalInput = this.tx.vin.reduce((acc, v) => (this.getInputValue(v) || 0) + acc, 0);
-      const confidentialInputCount = this.tx.vin.reduce((acc, v) => acc + (this.isUnknownInputValue(v) ? 1 : 0), 0);
-      const confidentialOutputCount = this.tx.vout.reduce((acc, v) => acc + (this.isUnknownOutputValue(v) ? 1 : 0), 0);
-
-      // if there are unknowns on both sides, the total is indeterminate, so we'll just fudge it
-      if (confidentialInputCount && confidentialOutputCount) {
-        const knownInputCount = (tx.vin.length - confidentialInputCount) || 1;
-        const knownOutputCount = (tx.vout.length - confidentialOutputCount) || 1;
-        // assume confidential inputs/outputs have the same average value as the known ones
-        const adjustedTotalInput = totalInput + ((totalInput / knownInputCount) * confidentialInputCount);
-        const adjustedTotalOutput = totalOutput + ((totalOutput / knownOutputCount) * confidentialOutputCount);
-        return Math.max(adjustedTotalInput, adjustedTotalOutput);
-      } else {
-        // otherwise knowing the actual total of one side suffices
-        return Math.max(totalInput, totalOutput);
-      }
-    }
+    // simple sum of outputs + fee for dogecoin
+    return this.tx.fee ? totalOutput + this.tx.fee : totalOutput;
   }
 
   initLines(side: 'in' | 'out', xputs: Xput[], total: number, maxVisibleStrands: number): SvgLine[] {
@@ -469,8 +424,6 @@ export class TxBowtieGraphComponent implements OnInit, OnChanges {
   getOutputValue(v: Vout): number | void {
     if (!v) {
       return null;
-    } else if (this.isLiquid && v.asset !== this.nativeAssetId) {
-      return null;
     } else {
       return v.value;
     }
@@ -479,19 +432,17 @@ export class TxBowtieGraphComponent implements OnInit, OnChanges {
   getInputValue(v: Vin): number | void {
     if (!v?.prevout) {
       return null;
-    } else if (this.isLiquid && v.prevout.asset !== this.nativeAssetId) {
-      return null;
     } else {
       return v.prevout.value;
     }
   }
 
   isUnknownInputValue(v: Vin): boolean {
-    return v?.prevout?.value == null || this.isLiquid && v?.prevout?.asset !== this.nativeAssetId;
+    return v?.prevout?.value == null;
   }
 
   isUnknownOutputValue(v: Vout): boolean {
-    return v?.value == null || this.isLiquid && v?.asset !== this.nativeAssetId;
+    return v?.value == null;
   }
 
   @HostListener('pointermove', ['$event'])

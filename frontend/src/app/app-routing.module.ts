@@ -7,8 +7,6 @@ import { MempoolBlockViewComponent } from './components/mempool-block-view/mempo
 import { ClockComponent } from './components/clock/clock.component';
 import { StatusViewComponent } from './components/status-view/status-view.component';
 import { AddressGroupComponent } from './components/address-group/address-group.component';
-import { TrackerComponent } from './components/tracker/tracker.component';
-import { AccelerateCheckout } from './components/accelerate-checkout/accelerate-checkout.component';
 import { TrackerGuard } from './route-guards';
 
 const browserWindow = window || {};
@@ -22,7 +20,7 @@ let routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        loadChildren: () => import('./bitcoin-graphs.module').then(m => m.BitcoinGraphsModule),
+        loadChildren: () => import('./dogecoin-graphs.module').then(m => m.DogecoinGraphsModule),
         data: { preload: true },
       },
       {
@@ -40,12 +38,12 @@ let routes: Routes = [
       },
       {
         path: 'status',
-        data: { networks: ['bitcoin', 'liquid'] },
+        data: { networks: ['doge', 'liquid'] },
         component: StatusViewComponent
       },
       {
         path: '',
-        loadChildren: () => import('./bitcoin-graphs.module').then(m => m.BitcoinGraphsModule),
+        loadChildren: () => import('./dogecoin-graphs.module').then(m => m.DogecoinGraphsModule),
         data: { preload: true },
       },
       {
@@ -60,7 +58,7 @@ let routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        loadChildren: () => import('./bitcoin-graphs.module').then(m => m.BitcoinGraphsModule),
+        loadChildren: () => import('./dogecoin-graphs.module').then(m => m.DogecoinGraphsModule),
         data: { preload: true },
       },
       {
@@ -78,12 +76,12 @@ let routes: Routes = [
       },
       {
         path: 'status',
-        data: { networks: ['bitcoin', 'liquid'] },
+        data: { networks: ['doge', 'liquid'] },
         component: StatusViewComponent
       },
       {
         path: '',
-        loadChildren: () => import('./bitcoin-graphs.module').then(m => m.BitcoinGraphsModule),
+        loadChildren: () => import('./dogecoin-graphs.module').then(m => m.DogecoinGraphsModule),
         data: { preload: true },
       },
       {
@@ -103,7 +101,7 @@ let routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        loadChildren: () => import('./bitcoin-graphs.module').then(m => m.BitcoinGraphsModule),
+        loadChildren: () => import('./dogecoin-graphs.module').then(m => m.DogecoinGraphsModule),
         data: { preload: true },
       },
       {
@@ -121,12 +119,12 @@ let routes: Routes = [
       },
       {
         path: 'status',
-        data: { networks: ['bitcoin', 'liquid'] },
+        data: { networks: ['doge', 'liquid'] },
         component: StatusViewComponent
       },
       {
         path: '',
-        loadChildren: () => import('./bitcoin-graphs.module').then(m => m.BitcoinGraphsModule),
+        loadChildren: () => import('./dogecoin-graphs.module').then(m => m.DogecoinGraphsModule),
         data: { preload: true },
       },
       {
@@ -138,7 +136,7 @@ let routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    loadChildren: () => import('./bitcoin-graphs.module').then(m => m.BitcoinGraphsModule),
+    loadChildren: () => import('./dogecoin-graphs.module').then(m => m.DogecoinGraphsModule),
     data: { preload: true },
   },
   {
@@ -207,12 +205,12 @@ let routes: Routes = [
   },
   {
     path: 'status',
-    data: { networks: ['bitcoin', 'liquid'] },
+    data: { networks: ['doge', 'liquid'] },
     component: StatusViewComponent
   },
   {
     path: '',
-    loadChildren: () => import('./bitcoin-graphs.module').then(m => m.BitcoinGraphsModule),
+    loadChildren: () => import('./dogecoin-graphs.module').then(m => m.DogecoinGraphsModule),
     data: { preload: true },
   },
 ];
@@ -223,17 +221,6 @@ if (browserWindowEnv && browserWindowEnv.BASE_MODULE === 'liquid') {
       path: 'testnet',
       children: [
         {
-          path: '',
-          pathMatch: 'full',
-          loadChildren: () => import('./liquid/liquid-graphs.module').then(m => m.LiquidGraphsModule),
-          data: { preload: true },
-        },
-        {
-          path: '',
-          loadChildren: () => import ('./liquid/liquid-master-page.module').then(m => m.LiquidMasterPageModule),
-          data: { preload: true },
-        },
-        {
           path: 'wallet',
           children: [],
           component: AddressGroupComponent,
@@ -243,30 +230,14 @@ if (browserWindowEnv && browserWindowEnv.BASE_MODULE === 'liquid') {
         },
         {
           path: 'status',
-          data: { networks: ['bitcoin', 'liquid'] },
+          data: { networks: ['doge', 'liquid'] },
           component: StatusViewComponent
-        },
-        {
-          path: '',
-          loadChildren: () => import('./liquid/liquid-graphs.module').then(m => m.LiquidGraphsModule),
-          data: { preload: true },
         },
         {
           path: '**',
           redirectTo: '/signet'
         },
       ]
-    },
-    {
-      path: '',
-      pathMatch: 'full',
-      loadChildren: () => import('./liquid/liquid-graphs.module').then(m => m.LiquidGraphsModule),
-      data: { preload: true },
-    },
-    {
-      path: '',
-      loadChildren: () => import ('./liquid/liquid-master-page.module').then(m => m.LiquidMasterPageModule),
-      data: { preload: true },
     },
     {
       path: 'wallet',
@@ -291,13 +262,8 @@ if (browserWindowEnv && browserWindowEnv.BASE_MODULE === 'liquid') {
     },
     {
       path: 'status',
-      data: { networks: ['bitcoin', 'liquid']},
+      data: { networks: ['doge', 'liquid'] },
       component: StatusViewComponent
-    },
-    {
-      path: '',
-      loadChildren: () => import('./liquid/liquid-graphs.module').then(m => m.LiquidGraphsModule),
-      data: { preload: true },
     },
   ];
 }

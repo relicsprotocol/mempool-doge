@@ -170,7 +170,6 @@ export class MempoolBlocksComponent implements OnInit, OnChanges, OnDestroy {
         mempoolBlocks.forEach((block, i) => {
           block.index = this.blockIndex + i;
           block.height = lastBlock.height + i + 1;
-          block.blink = specialBlocks[block.height]?.networks.includes(this.stateService.network || 'doge') ? true : false;
         });
 
         const stringifiedBlocks = JSON.stringify(mempoolBlocks);
@@ -213,12 +212,6 @@ export class MempoolBlocksComponent implements OnInit, OnChanges, OnDestroy {
         }
         if (state.mempoolPosition) {
           this.txPosition = state.mempoolPosition;
-          if (this.txPosition.accelerated && !oldTxPosition?.accelerated) {
-            this.acceleratingArrow = true;
-            setTimeout(() => {
-              this.acceleratingArrow = false;
-            }, 2000);
-          }
         }
         if (state.txFeePerVSize) {
           this.txFeePerVSize = state.txFeePerVSize;

@@ -1,8 +1,8 @@
 import { Inject, Injectable, PLATFORM_ID, LOCALE_ID } from '@angular/core';
 import { ReplaySubject, BehaviorSubject, Subject, fromEvent, Observable } from 'rxjs';
 import { Transaction } from '../interfaces/electrs.interface';
-import { AccelerationDelta, HealthCheckHost, IBackendInfo, MempoolBlock, MempoolBlockUpdate, MempoolInfo, Recommendedfees, ReplacedTransaction, ReplacementInfo, isMempoolState } from '../interfaces/websocket.interface';
-import { Acceleration, AccelerationPosition, BlockExtended, CpfpInfo, DifficultyAdjustment, MempoolPosition, OptimizedMempoolStats, RbfTree, TransactionStripped } from '../interfaces/node-api.interface';
+import { HealthCheckHost, IBackendInfo, MempoolBlock, MempoolBlockUpdate, MempoolInfo, Recommendedfees, ReplacedTransaction, ReplacementInfo, isMempoolState } from '../interfaces/websocket.interface';
+import { BlockExtended, CpfpInfo, DifficultyAdjustment, MempoolPosition, OptimizedMempoolStats, RbfTree, TransactionStripped } from '../interfaces/node-api.interface';
 import { Router, NavigationStart } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { filter, map, scan, share, shareReplay } from 'rxjs/operators';
@@ -16,14 +16,12 @@ export interface MarkBlockState {
   mempoolBlockIndex?: number;
   txFeePerVSize?: number;
   mempoolPosition?: MempoolPosition;
-  accelerationPositions?: AccelerationPosition[];
 }
 
 export interface ILoadingIndicators { [name: string]: number; }
 
 export interface Customization {
   theme: string;
-  enterprise?: string;
   branding: {
     name: string;
     site_id?: number;
@@ -45,11 +43,6 @@ export interface Customization {
 export interface Env {
   MAINNET_ENABLED: boolean;
   DOGE_ENABLED: boolean;
-  TESTNET_ENABLED: boolean;
-  TESTNET4_ENABLED: boolean;
-  SIGNET_ENABLED: boolean;
-  LIQUID_ENABLED: boolean;
-  LIQUID_TESTNET_ENABLED: boolean;
   ITEMS_PER_PAGE: number;
   KEEP_BLOCKS_AMOUNT: number;
   OFFICIAL_MEMPOOL_SPACE: boolean;
@@ -63,7 +56,6 @@ export interface Env {
   GIT_COMMIT_HASH: string;
   PACKAGE_JSON_VERSION: string;
   MEMPOOL_WEBSITE_URL: string;
-  LIQUID_WEBSITE_URL: string;
   MINING_DASHBOARD: boolean;
   LIGHTNING: boolean;
   AUDIT: boolean;
@@ -71,9 +63,6 @@ export interface Env {
   TESTNET_BLOCK_AUDIT_START_HEIGHT: number;
   SIGNET_BLOCK_AUDIT_START_HEIGHT: number;
   HISTORICAL_PRICE: boolean;
-  ACCELERATOR: boolean;
-  ACCELERATOR_BUTTON: boolean;
-  PUBLIC_ACCELERATIONS: boolean;
   ADDITIONAL_CURRENCIES: boolean;
   GIT_COMMIT_HASH_MEMPOOL_SPACE?: string;
   PACKAGE_JSON_VERSION_MEMPOOL_SPACE?: string;
@@ -84,11 +73,6 @@ export interface Env {
 const defaultEnv: Env = {
   'MAINNET_ENABLED': false,
   'DOGE_ENABLED': true,
-  'TESTNET_ENABLED': false,
-  'TESTNET4_ENABLED': false,
-  'SIGNET_ENABLED': false,
-  'LIQUID_ENABLED': false,
-  'LIQUID_TESTNET_ENABLED': false,
   'BASE_MODULE': 'mempool',
   'ROOT_NETWORK': '',
   'ITEMS_PER_PAGE': 10,
@@ -102,7 +86,6 @@ const defaultEnv: Env = {
   'GIT_COMMIT_HASH': '',
   'PACKAGE_JSON_VERSION': '',
   'MEMPOOL_WEBSITE_URL': 'https://mempool.space',
-  'LIQUID_WEBSITE_URL': 'https://liquid.network',
   'MINING_DASHBOARD': true,
   'LIGHTNING': false,
   'AUDIT': false,
@@ -110,9 +93,6 @@ const defaultEnv: Env = {
   'TESTNET_BLOCK_AUDIT_START_HEIGHT': 0,
   'SIGNET_BLOCK_AUDIT_START_HEIGHT': 0,
   'HISTORICAL_PRICE': true,
-  'ACCELERATOR': false,
-  'ACCELERATOR_BUTTON': true,
-  'PUBLIC_ACCELERATIONS': false,
   'ADDITIONAL_CURRENCIES': false,
   'SERVICES_API': 'https://mempool.space/api/v1/services',
 };
@@ -147,8 +127,6 @@ export class StateService {
   mempoolBlocks$ = new ReplaySubject<MempoolBlock[]>(1);
   mempoolBlockUpdate$ = new Subject<MempoolBlockUpdate>();
   liveMempoolBlockTransactions$: Observable<{ block: number, transactions: { [txid: string]: TransactionStripped} }>;
-  accelerations$ = new Subject<AccelerationDelta>();
-  liveAccelerations$: Observable<Acceleration[]>;
   txConfirmed$ = new Subject<[string, BlockExtended]>();
   txReplaced$ = new Subject<ReplacedTransaction>();
   txRbfInfo$ = new Subject<RbfTree>();
@@ -157,7 +135,7 @@ export class StateService {
   utxoSpent$ = new Subject<object>();
   difficultyAdjustment$ = new ReplaySubject<DifficultyAdjustment>(1);
   mempoolTransactions$ = new Subject<Transaction>();
-  mempoolTxPosition$ = new BehaviorSubject<{ txid: string, position: MempoolPosition, cpfp: CpfpInfo | null, accelerationPositions?: AccelerationPosition[] }>(null);
+  mempoolTxPosition$ = new BehaviorSubject<{ txid: string, position: MempoolPosition, cpfp: CpfpInfo | null }>(null);
   mempoolRemovedTransactions$ = new Subject<Transaction>();
   multiAddressTransactions$ = new Subject<{ [address: string]: { mempool: Transaction[], confirmed: Transaction[], removed: Transaction[] }}>();
   blockTransactions$ = new Subject<Transaction>();
@@ -174,7 +152,7 @@ export class StateService {
 
   live2Chart$ = new Subject<OptimizedMempoolStats>();
 
-  viewAmountMode$: BehaviorSubject<'btc' | 'sats' | 'fiat'>;
+  viewAmountMode$: BehaviorSubject<'doge' | 'shibes' | 'fiat'>;
   connectionState$ = new BehaviorSubject<0 | 1 | 2>(2);
   isTabHidden$: Observable<boolean>;
 
@@ -269,24 +247,6 @@ export class StateService {
     );
     this.liveMempoolBlockTransactions$.subscribe();
 
-    // Emits the full list of pending accelerations each time it changes
-    this.liveAccelerations$ = this.accelerations$.pipe(
-      scan((accelerations: { [txid: string]: Acceleration }, delta: AccelerationDelta) => {
-        if (delta.reset) {
-          accelerations = {};
-        } else {
-          for (const txid of delta.removed) {
-            delete accelerations[txid];
-          }
-        }
-        for (const acc of delta.added) {
-          accelerations[acc.txid] = acc;
-        }
-        return accelerations;
-      }, {}),
-      map((accMap) => Object.values(accMap).sort((a,b) => b.added - a.added))
-    );
-
     this.networkChanged$.subscribe((network) => {
       this.transactions$ = new BehaviorSubject<TransactionStripped[]>(null);
       this.blocksSubject$.next([]);
@@ -329,8 +289,8 @@ export class StateService {
     const blockDisplayModePreference = this.storageService.getValue('block-display-mode-preference');
     this.blockDisplayMode$ = new BehaviorSubject<string>(blockDisplayModePreference || 'fees');
 
-    const viewAmountModePreference = this.storageService.getValue('view-amount-mode') as 'btc' | 'sats' | 'fiat';
-    this.viewAmountMode$ = new BehaviorSubject<'btc' | 'sats' | 'fiat'>(viewAmountModePreference || 'btc');
+    const viewAmountModePreference = this.storageService.getValue('view-amount-mode') as 'doge' | 'shibes' | 'fiat';
+    this.viewAmountMode$ = new BehaviorSubject<'doge' | 'shibes' | 'fiat'>(viewAmountModePreference || 'doge');
 
     this.backend$.subscribe(backend => {
       this.backend = backend;
@@ -422,10 +382,6 @@ export class StateService {
 
   setBlockScrollingInProgress(value: boolean) {
     this.blockScrolling$.next(value);
-  }
-
-  isLiquid() {
-    return this.network === 'liquid' || this.network === 'liquidtestnet';
   }
 
   isMainnet(): boolean {

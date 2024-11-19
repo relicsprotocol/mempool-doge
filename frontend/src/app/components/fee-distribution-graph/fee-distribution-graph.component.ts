@@ -3,7 +3,7 @@ import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core
 import { TransactionStripped } from '../../interfaces/node-api.interface';
 import { StateService } from '../../services/state.service';
 import { VbytesPipe } from '../../shared/pipes/bytes-pipe/vbytes.pipe';
-import { selectPowerOfTen } from '../../bitcoin.utils';
+import { selectPowerOfTen } from '../../dogecoin.utils';
 import { Subscription } from 'rxjs';
 
 @Component({

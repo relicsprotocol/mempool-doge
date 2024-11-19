@@ -63,10 +63,10 @@
             </ng-template>
           </td>
           <td *ngIf="isMempoolModule" class="reward text-right" [ngClass]="{'widget': widget, 'legacy': !isMempoolModule}">
-            <app-amount [satoshis]="block.extras.reward" [noFiat]="true" digitsInfo="1.2-2"></app-amount>
+            <app-amount [shibes]="block.extras.reward" [noFiat]="true" digitsInfo="1.2-2"></app-amount>
           </td>
           <td *ngIf="isMempoolModule && !auditAvailable || isMempoolModule && !widget" class="fees text-right" [class]="isMempoolModule ? '' : 'legacy'">
-            <app-amount [satoshis]="block.extras.totalFees" [noFiat]="true" digitsInfo="1.2-2"></app-amount>
+            <app-amount [shibes]="block.extras.totalFees" [noFiat]="true" digitsInfo="1.2-2"></app-amount>
           </td>
           <td *ngIf="auditAvailable" class="fee-delta" [ngClass]="{'widget': widget, 'legacy': !isMempoolModule}">
             <span *ngIf="block.extras.feeDelta" class="difference" [class.positive]="block.extras.feeDelta >= 0" [class.negative]="block.extras.feeDelta < 0">
@@ -130,5 +130,5 @@
       <br>
     </ng-template>
   </div>
-  
+
 </div>

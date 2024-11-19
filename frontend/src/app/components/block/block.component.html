@@ -145,23 +145,17 @@
       <ng-template [ngIf]="fees !== undefined" [ngIfElse]="loadingFees">
         <tr>
           <td i18n="block.total-fees|Total fees in a block">Total fees</td>
-          <td *ngIf="network !== 'liquid' && network !== 'liquidtestnet'; else liquidTotalFees">
-            <app-amount [satoshis]="block.extras.totalFees" digitsInfo="1.2-3" [noFiat]="true"></app-amount>
+          <td>
+            <app-amount [shibes]="block.extras.totalFees" digitsInfo="1.2-3" [noFiat]="true"></app-amount>
             <span class="fiat">
               <app-fiat [blockConversion]="blockConversion" [value]="block.extras.totalFees" digitsInfo="1.0-0"></app-fiat>
             </span>
           </td>
-          <ng-template #liquidTotalFees>
-            <td>
-              <app-amount [satoshis]="fees * 100000000" digitsInfo="1.2-2" [noFiat]="true"></app-amount>&nbsp; <app-fiat
-              [blockConversion]="blockConversion" [value]="fees * 100000000" digitsInfo="1.2-2"></app-fiat>
-            </td>
-          </ng-template>
         </tr>
         <tr *ngIf="network !== 'liquid' && network !== 'liquidtestnet'">
           <td i18n="block.subsidy-and-fees|Total subsidy and fees in a block">Subsidy + fees</td>
           <td>
-            <app-amount [satoshis]="block.extras.reward" digitsInfo="1.2-3" [noFiat]="true"></app-amount>
+            <app-amount [shibes]="block.extras.reward" digitsInfo="1.2-3" [noFiat]="true"></app-amount>
             <span class="fiat">
               <app-fiat [blockConversion]="blockConversion" [value]="(blockSubsidy + fees) * 100000000" digitsInfo="1.0-0"></app-fiat>
             </span>
@@ -271,7 +265,7 @@
               <tbody>
                 <tr>
                   <td class="td-width" i18n="transaction.version">Version</td>
-                  <td>{{ block.version | decimal2hex }} <span *ngIf="displayTaprootStatus() && hasTaproot(block.version)" class="badge badge-success ml-1" i18n="tx-features.tag.taproot|Taproot">Taproot</span></td>
+                  <td>{{ block.version | decimal2hex }}</td>
                 </tr>
                 <tr *ngIf="network !== 'liquid' && network !== 'liquidtestnet'">
                   <td i18n="block.bits">Bits</td>
@@ -339,7 +333,7 @@
         </div>
         <div class="clearfix"></div>
         <div class="tx-skeleton">
-  
+
           <div class="header-bg box">
             <span class="skeleton-loader"></span>
           </div>
@@ -388,7 +382,7 @@
       <tr>
         <td i18n="block.total-fees|Total fees in a block">Total fees</td>
         <td>
-          <app-amount [satoshis]="blockAudit.expectedFees" digitsInfo="1.2-3" [noFiat]="true"></app-amount>
+          <app-amount [shibes]="blockAudit.expectedFees" digitsInfo="1.2-3" [noFiat]="true"></app-amount>
         </td>
       </tr>
       <tr>
@@ -409,10 +403,7 @@
       <tr>
         <td i18n="block.total-fees|Total fees in a block">Total fees</td>
         <td class="text-wrap">
-          <app-amount [satoshis]="block.extras.totalFees" digitsInfo="1.2-3" [noFiat]="true"></app-amount>
-          <span *ngIf="oobFees" class="oobFees" i18n-ngbTooltip="Acceleration Fees" ngbTooltip="Acceleration fees paid out-of-band">
-             <app-amount [satoshis]="oobFees" digitsInfo="1.8-8" [noFiat]="true" [addPlus]="true"></app-amount>
-          </span>
+          <app-amount [shibes]="block.extras.totalFees" digitsInfo="1.2-3" [noFiat]="true"></app-amount>
           <span *ngIf="blockAudit.feeDelta" class="difference" [class.positive]="blockAudit.feeDelta <= 0" [class.negative]="blockAudit.feeDelta > 0">
             {{ blockAudit.feeDelta < 0 ? '+' : '' }}{{ (-blockAudit.feeDelta * 100) | amountShortener: 2 }}%
           </span>

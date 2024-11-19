@@ -61,7 +61,7 @@ export class BlockHealthGraphComponent implements OnInit {
 
   ngOnInit(): void {
     this.seoService.setTitle($localize`:@@b1fa5b210c9670d49a6506f046d4a0c2797fd402:Block Health`);
-    this.seoService.setDescription($localize`:@@meta.description.bitcoin.graphs.block-health:See Bitcoin block health visualized over time. Block health is a measure of how many expected transactions were included in an actual mined block. Expected transactions are determined using Mempool's re-implementation of Bitcoin Core's transaction selection algorithm.`);
+    this.seoService.setDescription($localize`:@@meta.description.dogecoin.graphs.block-health:See Bitcoin block health visualized over time. Block health is a measure of how many expected transactions were included in an actual mined block. Expected transactions are determined using Mempool's re-implementation of Bitcoin Core's transaction selection algorithm.`);
     this.miningWindowPreference = '24h';//this.miningService.getDefaultTimespan('24h');
     this.radioGroupForm = this.formBuilder.group({ dateSpan: this.miningWindowPreference });
     this.radioGroupForm.controls.dateSpan.setValue(this.miningWindowPreference);

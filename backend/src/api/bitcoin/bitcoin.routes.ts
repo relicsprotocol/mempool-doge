@@ -19,13 +19,11 @@ import bitcoinClient from './bitcoin-client';
 import difficultyAdjustment from '../difficulty-adjustment';
 import transactionRepository from '../../repositories/TransactionRepository';
 import rbfCache from '../rbf-cache';
-import { calculateMempoolTxCpfp } from '../cpfp';
 
 class BitcoinRoutes {
   public initRoutes(app: Application) {
     app
       .get(config.MEMPOOL.API_URL_PREFIX + 'transaction-times', this.getTransactionTimes)
-      .get(config.MEMPOOL.API_URL_PREFIX + 'cpfp/:txId', this.$getCpfpInfo)
       .get(config.MEMPOOL.API_URL_PREFIX + 'difficulty-adjustment', this.getDifficultyChange)
       .get(config.MEMPOOL.API_URL_PREFIX + 'fees/recommended', this.getRecommendedFees)
       .get(config.MEMPOOL.API_URL_PREFIX + 'fees/mempool-blocks', this.getMempoolBlocks)
@@ -142,57 +140,6 @@ class BitcoinRoutes {
       res.json(batchedOutspends);
     } catch (e) {
       res.status(500).send(e instanceof Error ? e.message : e);
-    }
-  }
-
-  private async $getCpfpInfo(req: Request, res: Response) {
-    if (!/^[a-fA-F0-9]{64}$/.test(req.params.txId)) {
-      res.status(501).send(`Invalid transaction ID.`);
-      return;
-    }
-
-    const tx = mempool.getMempool()[req.params.txId];
-    if (tx) {
-      if (tx?.cpfpChecked) {
-        res.json({
-          ancestors: tx.ancestors,
-          bestDescendant: tx.bestDescendant || null,
-          descendants: tx.descendants || null,
-          effectiveFeePerVsize: tx.effectiveFeePerVsize || null,
-          sigops: tx.sigops,
-          fee: tx.fee,
-          adjustedVsize: tx.adjustedVsize,
-          acceleration: tx.acceleration,
-          acceleratedBy: tx.acceleratedBy || undefined,
-          acceleratedAt: tx.acceleratedAt || undefined,
-          feeDelta: tx.feeDelta || undefined,
-        });
-        return;
-      }
-
-      const cpfpInfo = calculateMempoolTxCpfp(tx, mempool.getMempool());
-
-      res.json(cpfpInfo);
-      return;
-    } else {
-      let cpfpInfo;
-      if (config.DATABASE.ENABLED) {
-        try {
-          cpfpInfo = await transactionRepository.$getCpfpInfo(req.params.txId);
-        } catch (e) {
-          res.status(500).send('failed to get CPFP info');
-          return;
-        }
-      }
-      if (cpfpInfo) {
-        res.json(cpfpInfo);
-        return;
-      } else {
-        res.json({
-          ancestors: []
-        });
-        return;
-      }
     }
   }
 
@@ -461,7 +408,7 @@ class BitcoinRoutes {
       res.status(500).send(e instanceof Error ? e.message : e);
     }
   }
-  
+
   private async getBlockTransactions(req: Request, res: Response) {
     try {
       loadingIndicators.setProgress('blocktxs-' + req.params.hash, 0);
